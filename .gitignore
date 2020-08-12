@@ -1,0 +1,10 @@
+
+.project
+.DS_Store
+.cproject
+.settings
+.svn
+bin
+Debug
+gfc 
+gfc-test

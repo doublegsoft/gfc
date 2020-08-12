@@ -1,0 +1,40 @@
+CC = x86_64-w64-mingw32-gcc
+WINDRES = x86_64-w64-mingw32-windres
+
+CFLAGS = -g -O2 -Wall -Wextra -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter \
+				 -I/opt/local/x86_64-w64-mingw32/include/ \
+				 -I../include \
+
+LFLAGS = 
+
+LIBS = \
+       -liconv -lrpcrt4
+
+SRC = ../src
+TARGET = ../bin
+
+all: 	test_gfc_string.exe 			\
+			test_gfc_uuid.exe 				\
+			test_gfc_list.exe					\
+			test_gfc_ring.exe					\
+			test_gfc_threads.exe
+
+test_gfc_string.exe:
+	$(CC) $(CFLAGS) $(LFLAGS) ../src/gfc_string.c test_gfc_string.c -o $(TARGET)/$@ $(LIBS)
+
+test_gfc_uuid.exe:
+	$(CC) $(CFLAGS) $(LFLAGS) ../src/gfc_uuid.c test_gfc_uuid.c -o $(TARGET)/$@ $(LIBS)
+
+test_gfc_list.exe:
+	$(CC) $(CFLAGS) $(LFLAGS) ../src/gfc_list.c test_gfc_list.c -o $(TARGET)/$@ $(LIBS)
+
+test_gfc_ring.exe:
+	$(CC) $(CFLAGS) $(LFLAGS) ../src/gfc_ring.c test_gfc_ring.c -o $(TARGET)/$@ $(LIBS)
+
+test_gfc_threads.exe:
+	$(CC) $(CFLAGS) $(LFLAGS) ../src/gfc_threads.c test_gfc_threads.c -o $(TARGET)/$@ $(LIBS)
+	
+.PHONY: clean
+
+clean:
+	rm -f $(TARGET)/*.o
