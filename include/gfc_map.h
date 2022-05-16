@@ -24,8 +24,15 @@
 
 #include "gfc_type.h"
 
+#define GFC_ERROR_MAP_OK                0
+#define GFC_ERROR_MAP_FULL              3001
+#define GFC_ERROR_MAP_MISSING           3002
+#define GFC_ERROR_MAP_OUT_OF_MEMORY     3003
+
 typedef struct  gfc_map_s          gfc_map_t;
 typedef         gfc_map_t*         gfc_map_p;
+
+typedef int (*resovle)(char*, void*);
 
 /*!
 ** @brief
@@ -34,7 +41,7 @@ typedef         gfc_map_t*         gfc_map_p;
 **
 ** @return a map instance
 */
-gfc_map_p
+GFC_API gfc_map_p
 gfc_map_new(void);
 
 /*!
@@ -48,7 +55,7 @@ gfc_map_new(void);
 ** @param data
 **        a user data
 */
-void
+GFC_API int
 gfc_map_put(gfc_map_p map, const char* key, user_data data);
 
 /*!
@@ -62,7 +69,7 @@ gfc_map_put(gfc_map_p map, const char* key, user_data data);
 ** @param index
 **        an indexed user data to remove, zero-based.
 */
-user_data
+GFC_API user_data
 gfc_map_pop(gfc_map_p map, const char* key);
 
 /*!
@@ -78,8 +85,8 @@ gfc_map_pop(gfc_map_p map, const char* key);
 **
 ** @return the found user data or null
 */
-user_data
-gfc_map_get(gfc_map_p map, const char* key);
+GFC_API int
+gfc_map_get(gfc_map_p map, const char* key, user_data* data);
 
 /*!
 ** @brief
@@ -91,7 +98,7 @@ gfc_map_get(gfc_map_p map, const char* key);
 **
 ** @return the size of map
 */
-uint
+GFC_API uint
 gfc_map_size(gfc_map_p map);
 
 /*!
@@ -102,7 +109,7 @@ gfc_map_size(gfc_map_p map);
 ** @param map
 **        a map instance
 */
-void
+GFC_API void
 gfc_map_clear(gfc_map_p map);
 
 /*!
@@ -113,7 +120,7 @@ gfc_map_clear(gfc_map_p map);
 ** @param map
 **        a map to free
 */
-void
+GFC_API void
 gfc_map_free(gfc_map_p map);
 
 #endif // __GFC_MAP_H__

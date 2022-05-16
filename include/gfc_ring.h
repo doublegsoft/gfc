@@ -32,7 +32,7 @@ typedef         gfc_ring_t*         gfc_ring_p;
 **
 ** @return 创建的列表对象
 */
-gfc_ring_p
+GFC_API gfc_ring_p
 gfc_ring_new(uint count);
 
 /*!
@@ -42,7 +42,7 @@ gfc_ring_new(uint count);
 **
 ** @param data 用户数据
 */
-void
+GFC_API void
 gfc_ring_push(gfc_ring_p ring, user_data data);
 
 /*!
@@ -50,7 +50,7 @@ gfc_ring_push(gfc_ring_p ring, user_data data);
 **
 ** @param ring 列表对象
 */
-user_data
+GFC_API user_data
 gfc_ring_pop(gfc_ring_p ring);
 
 /*!
@@ -58,7 +58,7 @@ gfc_ring_pop(gfc_ring_p ring);
 **
 ** @param ring 列表对象
 */
-void
+GFC_API void
 gfc_ring_clear(gfc_ring_p ring);
 
 /*!
@@ -66,7 +66,7 @@ gfc_ring_clear(gfc_ring_p ring);
 **
 ** @param 销毁的列表对象
 */
-void
+GFC_API void
 gfc_ring_free(gfc_ring_p ring);
 
 #endif // __GFC_RING_H__

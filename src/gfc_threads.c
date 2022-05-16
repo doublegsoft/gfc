@@ -72,7 +72,7 @@ gfc_threads_entry(void* data)
   return NULL;
 }
 
-gfc_threads_p
+GFC_API gfc_threads_p
 gfc_threads_new(uint count)
 {
   gfc_threads_p ret = (gfc_threads_p) malloc(sizeof(gfc_threads_t));
@@ -84,7 +84,7 @@ gfc_threads_new(uint count)
   return ret;
 }
 
-void
+GFC_API void
 gfc_threads_do(gfc_threads_p threads, void*(*fun)(void* data), void* data)
 {
   int res = 0;
@@ -108,7 +108,7 @@ gfc_threads_do(gfc_threads_p threads, void*(*fun)(void* data), void* data)
   }
 }
 
-void
+GFC_API void
 gfc_threads_free(gfc_threads_p threads)
 {
   pthread_mutex_lock(&threads->lock);

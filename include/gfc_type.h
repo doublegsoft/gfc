@@ -17,12 +17,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __GFC_TYPES_H__
-#define __GFC_TYPES_H__
+#ifndef __GFC_TYPE_H__
+#define __GFC_TYPE_H__
 
 #ifdef __cplusplus
 extern "C"
 {
+#endif
+
+#ifdef  _WIN32
+#define GFC_API   __declspec(dllexport)
+#else
+#define GFC_API
 #endif
 
 typedef unsigned char                   byte;
@@ -63,4 +69,4 @@ typedef void*                           user_data;
 }
 #endif
 
-#endif // __GFC_TYPES_H__
+#endif // __GFC_TYPE_H__

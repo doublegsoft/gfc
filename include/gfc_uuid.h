@@ -1,21 +1,21 @@
 /*
- * gfc
- *
- * Copyright (C) 2019 doublegsoft.open
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+** gfc
+**
+** Copyright (C) 2019 doublegsoft.open
+**
+** This program is free software: you can redistribute it and/or modify
+** it under the terms of the GNU General Public License as published by
+** the Free Software Foundation, either version 3 of the License, or
+** (at your option) any later version.
+**
+** This program is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+** GNU General Public License for more details.
+**
+** You should have received a copy of the GNU General Public License
+** along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #ifndef __GFC_UUID_H__
 #define __GFC_UUID_H__
@@ -24,6 +24,8 @@
 extern "C"
 {
 #endif
+
+#include "gfc_type.h"
 
 #define UUID_STR_LENGTH (36)
 #define UUID_T_LENGTH (16)
@@ -36,7 +38,7 @@ typedef unsigned char gfc_uuid_t[UUID_T_LENGTH];
 ** @param uuid
 **        the uuid data
 */
-void
+GFC_API void
 gfc_uuid_clear(gfc_uuid_t uuid);
 
 /*!
@@ -50,7 +52,7 @@ gfc_uuid_clear(gfc_uuid_t uuid);
 **
 ** @return 0 means equal
 */
-int
+GFC_API int
 gfc_uuid_compare(const gfc_uuid_t uuid1, const gfc_uuid_t uuid2);
 
 
@@ -63,7 +65,7 @@ gfc_uuid_compare(const gfc_uuid_t uuid1, const gfc_uuid_t uuid2);
 ** @param src
 **        the source uuid
 */
-void
+GFC_API void
 gfc_uuid_copy(gfc_uuid_t dst, const gfc_uuid_t src);
 
 /*!
@@ -72,7 +74,7 @@ gfc_uuid_copy(gfc_uuid_t dst, const gfc_uuid_t src);
 ** @param out
 **        the uuid holder
 */
-void
+GFC_API void
 gfc_uuid_generate(gfc_uuid_t out);
 
 /*!
@@ -81,7 +83,7 @@ gfc_uuid_generate(gfc_uuid_t out);
 ** @param out
 **        the uuid holder
 */
-void
+GFC_API void
 gfc_uuid_random(gfc_uuid_t out);
 
 /*!
@@ -92,7 +94,7 @@ gfc_uuid_random(gfc_uuid_t out);
 **
 ** @return 0 means null, 1 means not null
 */
-int
+GFC_API int
 gfc_uuid_null(const gfc_uuid_t uuid);
 
 /*!
@@ -104,7 +106,7 @@ gfc_uuid_null(const gfc_uuid_t uuid);
 ** @param uuid
 **        the uuid data holder
 */
-int
+GFC_API int
 gfc_uuid_parse(const char* in, gfc_uuid_t uuid);
 
 /*!
@@ -116,7 +118,7 @@ gfc_uuid_parse(const char* in, gfc_uuid_t uuid);
 ** @param out
 **        the string holder
 */
-void
+GFC_API void
 gfc_uuid_lower(const gfc_uuid_t uuid, char* out);
 
 /*!
@@ -128,7 +130,7 @@ gfc_uuid_lower(const gfc_uuid_t uuid, char* out);
 ** @param out
 **        the string holder
 */
-void
+GFC_API void
 gfc_uuid_upper(const gfc_uuid_t uuid, char* out);
 
 #ifdef __cplusplus

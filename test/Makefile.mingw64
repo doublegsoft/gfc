@@ -2,38 +2,68 @@ CC = x86_64-w64-mingw32-gcc
 WINDRES = x86_64-w64-mingw32-windres
 
 CFLAGS = -g -O2 -Wall -Wextra -Wno-unused-function -Wno-unused-variable -Wno-unused-parameter \
-				 -I/opt/local/x86_64-w64-mingw32/include/ \
-				 -I../include \
+				 -Wno-address -Wno-pointer-sign \
+				 -I/opt/local/x86_64-w64-mingw32/include -I./include \
+				 -DGFC_USE_OPENSSL -DNO_OPEN_MEMSTREAM
 
 LFLAGS = 
 
-LIBS = \
-       -liconv -lrpcrt4
+LIBS = -liconv -lrpcrt4 -lws2_32 -lcrypto -ljson-c
 
-SRC = ../src
-TARGET = ../bin
+SRC = src
+TESTSRC = test
+TARGET = bin/mingw64
 
-all: 	test_gfc_string.exe 			\
-			test_gfc_uuid.exe 				\
-			test_gfc_list.exe					\
-			test_gfc_ring.exe					\
-			test_gfc_threads.exe
+all: 	test_gfc_string.exe 			 	\
+			test_gfc_uuid.exe 				 	\
+			test_gfc_list.exe					 	\
+			test_gfc_ring.exe					 	\
+			test_gfc_threads.exe       	\
+			test_gfc_log.exe					 	\
+			test_gfc_lru.exe					 	\
+			test_gfc_tcp.exe					 	\
+			test_gfc_crypto.exe				 	\
+			test_gfc_map.exe						\
+			test_gfc_sql.exe            \
+			test_gfc_utf8.exe
 
 test_gfc_string.exe:
-	$(CC) $(CFLAGS) $(LFLAGS) ../src/gfc_string.c test_gfc_string.c -o $(TARGET)/$@ $(LIBS)
+	$(CC) $(CFLAGS) $(LFLAGS) $(SRC)/gfc_string.c $(TESTSRC)/test_gfc_string.c -o $(TARGET)/$@ $(LIBS)
 
 test_gfc_uuid.exe:
-	$(CC) $(CFLAGS) $(LFLAGS) ../src/gfc_uuid.c test_gfc_uuid.c -o $(TARGET)/$@ $(LIBS)
+	$(CC) $(CFLAGS) $(LFLAGS) $(SRC)/gfc_uuid.c $(TESTSRC)/test_gfc_uuid.c -o $(TARGET)/$@ $(LIBS)
 
 test_gfc_list.exe:
-	$(CC) $(CFLAGS) $(LFLAGS) ../src/gfc_list.c test_gfc_list.c -o $(TARGET)/$@ $(LIBS)
+	$(CC) $(CFLAGS) $(LFLAGS) $(SRC)/gfc_list.c $(TESTSRC)/test_gfc_list.c -o $(TARGET)/$@ $(LIBS)
 
 test_gfc_ring.exe:
-	$(CC) $(CFLAGS) $(LFLAGS) ../src/gfc_ring.c test_gfc_ring.c -o $(TARGET)/$@ $(LIBS)
+	$(CC) $(CFLAGS) $(LFLAGS) $(SRC)/gfc_ring.c $(TESTSRC)/test_gfc_ring.c -o $(TARGET)/$@ $(LIBS)
 
 test_gfc_threads.exe:
-	$(CC) $(CFLAGS) $(LFLAGS) ../src/gfc_threads.c test_gfc_threads.c -o $(TARGET)/$@ $(LIBS)
+	$(CC) $(CFLAGS) $(LFLAGS) $(SRC)/gfc_threads.c $(TESTSRC)/test_gfc_threads.c -o $(TARGET)/$@ $(LIBS)
 	
+test_gfc_log.exe:
+	$(CC) $(CFLAGS) $(LFLAGS) $(SRC)/gfc_log.c $(TESTSRC)/test_gfc_log.c -o $(TARGET)/$@ $(LIBS)
+
+test_gfc_lru.exe:
+	$(CC) $(CFLAGS) $(LFLAGS) $(SRC)/gfc_lru.c $(TESTSRC)/test_gfc_lru.c -o $(TARGET)/$@ $(LIBS)
+	
+test_gfc_tcp.exe:
+	$(CC) $(CFLAGS) $(LFLAGS) $(SRC)/gfc_tcp.c $(TESTSRC)/test_gfc_tcp.c -o $(TARGET)/$@ $(LIBS)
+
+test_gfc_crypto.exe:
+	$(CC) $(CFLAGS) $(LFLAGS) $(SRC)/gfc_crypto.c $(SRC)/gfc_hex.c $(TESTSRC)/test_gfc_crypto.c -o $(TARGET)/$@ $(LIBS)
+
+test_gfc_map.exe:
+	$(CC) $(CFLAGS) $(LFLAGS) $(SRC)/gfc_map.c $(TESTSRC)/test_gfc_map.c -o $(TARGET)/$@ $(LIBS)
+					
+test_gfc_sql.exe:
+	$(CC) $(CFLAGS) $(LFLAGS) $(SRC)/gfc_map.c $(SRC)/gfc_sql.c $(TESTSRC)/test_gfc_sql.c -o $(TARGET)/$@ $(LIBS)
+
+test_gfc_utf8.exe:
+	$(CC) $(CFLAGS) $(LFLAGS) $(SRC)/gfc_utf8.c $(TESTSRC)/test_gfc_utf8.c -o $(TARGET)/$@ $(LIBS)
+    
+								
 .PHONY: clean
 
 clean:

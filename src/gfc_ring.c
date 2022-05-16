@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stddef.h>
 #include <stdlib.h>
 
 #include "gfc_type.h"
@@ -55,7 +56,7 @@ struct gfc_ring_s
   uint                        capacity;
 };
 
-gfc_ring_p
+GFC_API gfc_ring_p
 gfc_ring_new(uint count)
 {
   gfc_ring_p ret = (gfc_ring_p) malloc(sizeof(gfc_ring_t));
@@ -66,7 +67,7 @@ gfc_ring_new(uint count)
   return ret;
 }
 
-void
+GFC_API void
 gfc_ring_push(gfc_ring_p ring, user_data data)
 {
   gfc_ring_item_p curr = &ring->head[ring->setter];
@@ -78,7 +79,7 @@ gfc_ring_push(gfc_ring_p ring, user_data data)
     ring->getter = 0;
 }
 
-user_data
+GFC_API user_data
 gfc_ring_pop(gfc_ring_p ring)
 {
   if (ring->getter == GFC_RING_INVALID_INDEX)
@@ -90,7 +91,7 @@ gfc_ring_pop(gfc_ring_p ring)
   return ret;
 }
 
-void
+GFC_API void
 gfc_ring_clear(gfc_ring_p ring)
 {
   int i;
@@ -104,7 +105,7 @@ gfc_ring_clear(gfc_ring_p ring)
   }
 }
 
-void
+GFC_API void
 gfc_ring_free(gfc_ring_p ring)
 {
   gfc_ring_clear(ring);

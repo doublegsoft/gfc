@@ -30,6 +30,7 @@
 #endif
 
 #include "gfc_string.h"
+#include "gfc_type.h"
 
 /*!
 ** @brief
@@ -43,7 +44,7 @@
 **
 ** @return a new string object
 */
-gfc_string_p
+GFC_API gfc_string_p
 gfc_string_new(const char* str, int len)
 {
   gfc_string_p ret = (gfc_string_p) malloc(sizeof(gfc_string_p));
@@ -72,7 +73,7 @@ gfc_string_new(const char* str, int len)
 ** @param len
 **        the string length as you know
 */
-void
+GFC_API void
 gfc_string_concat(gfc_string_p str, const char* val, int len)
 {
   if (val == NULL) return;
@@ -98,7 +99,7 @@ gfc_string_concat(gfc_string_p str, const char* val, int len)
 **
 ** @return the length of string object
 */
-size_t
+GFC_API size_t
 gfc_string_length(gfc_string_p str)
 {
   return str->length - 1;
@@ -108,14 +109,14 @@ gfc_string_length(gfc_string_p str)
 ** @brief
 ** Destroys a string object.
 */
-void
+GFC_API void
 gfc_string_free(gfc_string_p str)
 {
   free(str->buffer);
   free(str);
 }
 
-void
+GFC_API void
 gfc_string_print(gfc_string_p str)
 {
   printf("%s\n", str->buffer);
@@ -135,7 +136,7 @@ gfc_string_print(gfc_string_p str)
 ** @param len
 **        the buffer length of destination string
 */
-void
+GFC_API void
 gfc_string_utf8(const char* src, char* dst, int len)
 {
   if (src == NULL)
@@ -177,7 +178,7 @@ gfc_string_utf8(const char* src, char* dst, int len)
 #endif
 }
 
-void
+GFC_API void
 gfc_string_gbk(const char* src, char* dst, int len)
 {
 #ifdef _WIN32

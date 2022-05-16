@@ -13,6 +13,7 @@ thread_entry(void* data)
     printf("%d -- %d\n", *id, i);
     sleep(1);
   }
+  return NULL;
 }
 
 int

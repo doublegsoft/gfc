@@ -29,6 +29,8 @@ extern "C"
 #include <stdlib.h>
 #include <string.h>
 
+#include "gfc_type.h"
+
 #ifdef _WIN32
 #  ifdef _MSC_VER
 #include <windows.h>
@@ -61,7 +63,7 @@ struct gfc_string_s
 **
 ** @return a new string object
 */
-gfc_string_p
+GFC_API gfc_string_p
 gfc_string_new(const char* str, int len);
 
 /*!
@@ -77,7 +79,7 @@ gfc_string_new(const char* str, int len);
 ** @param len
 **        the string length as you know
 */
-void
+GFC_API void
 gfc_string_concat(gfc_string_p str, const char* val, int len);
 
 /*!
@@ -89,17 +91,17 @@ gfc_string_concat(gfc_string_p str, const char* val, int len);
 **
 ** @return the length of string object
 */
-size_t
+GFC_API size_t
 gfc_string_length(gfc_string_p str);
 
 /*!
 ** @brief
 ** Destroys a string object.
 */
-void
+GFC_API void
 gfc_string_free(gfc_string_p str);
 
-void
+GFC_API void
 gfc_string_print(gfc_string_p str);
 
 /*！
@@ -116,10 +118,10 @@ gfc_string_print(gfc_string_p str);
 ** @param len
 **        the buffer length of destination string
 */
-void
+GFC_API void
 gfc_string_utf8(const char* src, char* dst, int len);
 
-void
+GFC_API void
 gfc_string_gbk(const char* src, char* dst, int len);
 
 #ifdef __cplusplus

@@ -38,10 +38,22 @@ typedef         gfc_threads_t*    gfc_threads_p;
 **
 ** @return a threads context instance
 */
-gfc_threads_p
+GFC_API gfc_threads_p
 gfc_threads_new(uint count);
 
-void
+/*!
+** Sets the thread working function in threads context.
+**
+** @param threads
+**        the threads handle
+**
+** @param fun
+**        the thread working function
+**
+** @param data
+**        the thread working function parameters
+*/
+GFC_API void
 gfc_threads_do(gfc_threads_p threads, void*(*fun)(void* data), void* data);
 
 /*!
@@ -50,7 +62,7 @@ gfc_threads_do(gfc_threads_p threads, void*(*fun)(void* data), void* data);
 ** @param threads
 **        threads context instance
 */
-void
+GFC_API void
 gfc_threads_free(gfc_threads_p threads);
 
 #ifdef __cplusplus

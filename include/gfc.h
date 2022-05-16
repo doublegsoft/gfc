@@ -29,8 +29,19 @@ extern "C"
 #include "gfc_string.h"
 #include "gfc_uuid.h"
 #include "gfc_list.h"
+#include "gfc_map.h"
 #include "gfc_ring.h"
 #include "gfc_threads.h"
+#include "gfc_crypto.h"
+#include "gfc_tcp.h"
+#include "gfc_lru.h"
+#include "gfc_log.h"
+#include "gfc_sql.h"
+
+/*!
+** Added on Dec 26, 2020
+*/
+#include "gfc_utf8.h"
 
 #ifdef __cplusplus
 }

@@ -1,24 +1,35 @@
 /*
- * gfc
- *
- * Copyright (C) 2019 doublegsoft.open
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+**           .d888
+**          d88P"
+**          888
+**  .d88b.  888888 .d8888b
+** d88P"88b 888   d88P"
+** 888  888 888   888
+** Y88b 888 888   Y88b.
+**  "Y88888 888    "Y8888P
+**      888
+** Y8b d88P
+**  "Y88P"
+**
+** Copyright (C) 2019 doublegsoft.open
+**
+** This program is free software: you can redistribute it and/or modify
+** it under the terms of the GNU General Public License as published by
+** the Free Software Foundation, either version 3 of the License, or
+** (at your option) any later version.
+**
+** This program is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+** GNU General Public License for more details.
+**
+** You should have received a copy of the GNU General Public License
+** along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
 
 #include "gfc_type.h"
 #include "gfc_map.h"
@@ -27,29 +38,35 @@
 #define INITIAL_SIZE (256)
 #define MAX_CHAIN_LENGTH (8)
 
+typedef struct  gfc_map_element_s          gfc_map_element_t;
+typedef         gfc_map_element_t*         gfc_map_element_p;
+
 /* We need to keep keys and values */
-typedef struct _gfc_map_element{
+struct gfc_map_element_s
+{
   char* key;
   int in_use;
-  any_t data;
-} gfc_map_element;
+  void* data;
+};
 
 /* A hashmap has some maximum size and current size,
  * as well as the data to hold. */
-typedef struct _gfc_map_map{
+struct gfc_map_s
+{
   int table_size;
   int size;
-  gfc_map_element *data;
-} gfc_map_map;
+  gfc_map_element_p data;
+};
 
 /*
  * Return an empty hashmap, or NULL on failure.
  */
-gfc_map_p gfc_map_new() {
-  gfc_map_map* m = (gfc_map_map*) malloc(sizeof(gfc_map_map));
+GFC_API gfc_map_p
+gfc_map_new() {
+  gfc_map_p m = (gfc_map_p) malloc(sizeof(gfc_map_t));
   if(!m) goto err;
 
-  m->data = (gfc_map_element*) calloc(INITIAL_SIZE, sizeof(gfc_map_element));
+  m->data = (gfc_map_element_p) calloc(INITIAL_SIZE, sizeof(gfc_map_element_t));
   if(!m->data) goto err;
 
   m->table_size = INITIAL_SIZE;
@@ -126,20 +143,19 @@ unsigned long crc32(const unsigned char *s, unsigned int len)
 
   crc32val = 0;
   for (i = 0;  i < len;  i ++)
-    {
-      crc32val =
-  crc32_tab[(crc32val ^ s[i]) & 0xff] ^
-    (crc32val >> 8);
-    }
+  {
+    crc32val = crc32_tab[(crc32val ^ s[i]) & 0xff] ^ (crc32val >> 8);
+  }
   return crc32val;
 }
 
 /*
  * Hashing function for a string
  */
-unsigned int gfc_map_hash_int(gfc_map_map * m, char* keystring){
+unsigned int
+gfc_map_hash_int(gfc_map_p map, char* keystring){
 
-    unsigned long key = crc32((unsigned char*)(keystring), strlen(keystring));
+  unsigned long key = crc32((unsigned char*)(keystring), strlen(keystring));
 
   /* Robert Jenkins' 32 bit Mix Function */
   key += (key << 12);
@@ -154,140 +170,130 @@ unsigned int gfc_map_hash_int(gfc_map_map * m, char* keystring){
   /* Knuth's Multiplicative Method */
   key = (key >> 3) * 2654435761;
 
-  return key % m->table_size;
+  return key % map->table_size;
 }
 
 /*
  * Return the integer of the location in data
  * to store the point to the item, or MAP_FULL.
  */
-int gfc_map_hash(gfc_map_p in, char* key){
+int
+gfc_map_hash(gfc_map_p map, char* key){
   int curr;
   int i;
 
-  /* Cast the hashmap */
-  gfc_map_map* m = (gfc_map_map *) in;
-
   /* If full, return immediately */
-  if(m->size >= (m->table_size/2)) return MAP_FULL;
+  if(map->size >= (map->table_size/2)) return GFC_ERROR_MAP_FULL;
 
   /* Find the best index */
-  curr = gfc_map_hash_int(m, key);
+  curr = gfc_map_hash_int(map, key);
 
   /* Linear probing */
   for(i = 0; i< MAX_CHAIN_LENGTH; i++){
-    if(m->data[curr].in_use == 0)
+    if(map->data[curr].in_use == 0)
       return curr;
 
-    if(m->data[curr].in_use == 1 && (strcmp(m->data[curr].key,key)==0))
+    if(map->data[curr].in_use == 1 && (strcmp(map->data[curr].key,key)==0))
       return curr;
 
-    curr = (curr + 1) % m->table_size;
+    curr = (curr + 1) % map->table_size;
   }
 
-  return MAP_FULL;
+  return GFC_ERROR_MAP_FULL;
 }
 
 /*
  * Doubles the size of the hashmap, and rehashes all the elements
  */
-int gfc_map_rehash(gfc_map_p in){
+int gfc_map_rehash(gfc_map_p map){
   int i;
   int old_size;
-  gfc_map_element* curr;
+  gfc_map_element_p curr;
 
-  /* Setup the new elements */
-  gfc_map_map *m = (gfc_map_map *) in;
-  gfc_map_element* temp = (gfc_map_element *)
-    calloc(2 * m->table_size, sizeof(gfc_map_element));
-  if(!temp) return MAP_OMEM;
+  gfc_map_element_p temp = (gfc_map_element_p)
+        calloc(2 * map->table_size, sizeof(gfc_map_element_t));
+  if(!temp) return GFC_ERROR_MAP_OUT_OF_MEMORY;
 
   /* Update the array */
-  curr = m->data;
-  m->data = temp;
+  curr = map->data;
+  map->data = temp;
 
   /* Update the size */
-  old_size = m->table_size;
-  m->table_size = 2 * m->table_size;
-  m->size = 0;
+  old_size = map->table_size;
+  map->table_size = 2 * map->table_size;
+  map->size = 0;
 
   /* Rehash the elements */
   for(i = 0; i < old_size; i++){
-        int status;
+    int status;
 
-        if (curr[i].in_use == 0)
-            continue;
+    if (curr[i].in_use == 0)
+      continue;
 
-    status = gfc_map_put(m, curr[i].key, curr[i].data);
-    if (status != MAP_OK)
+    status = gfc_map_put(map, curr[i].key, curr[i].data);
+    if (status != GFC_ERROR_MAP_OK)
       return status;
   }
 
   free(curr);
 
-  return MAP_OK;
+  return GFC_ERROR_MAP_OK;
 }
 
-/*
- * Add a pointer to the hashmap with some key
- */
-int gfc_map_put(gfc_map_p in, char* key, any_t value){
+/*!
+** Add a pointer to the hashmap with some key
+*/
+GFC_API int
+gfc_map_put(gfc_map_p map, const char* key, user_data value)
+{
   int index;
-  gfc_map_map* m;
-
-  /* Cast the hashmap */
-  m = (gfc_map_map *) in;
 
   /* Find a place to put our value */
-  index = gfc_map_hash(in, key);
-  while(index == MAP_FULL){
-    if (gfc_map_rehash(in) == MAP_OMEM) {
-      return MAP_OMEM;
+  index = gfc_map_hash(map, (char*)key);
+  while(index == GFC_ERROR_MAP_FULL){
+    if (gfc_map_rehash(map) == GFC_ERROR_MAP_OUT_OF_MEMORY) {
+      return GFC_ERROR_MAP_OUT_OF_MEMORY;
     }
-    index = gfc_map_hash(in, key);
+    index = gfc_map_hash(map, (char*)key);
   }
 
   /* Set the data */
-  m->data[index].data = value;
-  m->data[index].key = key;
-  m->data[index].in_use = 1;
-  m->size++;
+  map->data[index].data = value;
+  map->data[index].key = (char*)key;
+  map->data[index].in_use = 1;
+  map->size++;
 
-  return MAP_OK;
+  return GFC_ERROR_MAP_OK;
 }
 
 /*
  * Get your pointer out of the hashmap with a key
  */
-int gfc_map_get(gfc_map_p in, char* key, any_t *arg){
+GFC_API int
+gfc_map_get(gfc_map_p map, const char* key, user_data* arg)
+{
   int curr;
   int i;
-  gfc_map_map* m;
 
-  /* Cast the hashmap */
-  m = (gfc_map_map *) in;
-
-  /* Find data location */
-  curr = gfc_map_hash_int(m, key);
+  curr = gfc_map_hash_int(map, (char*)key);
 
   /* Linear probing, if necessary */
-  for(i = 0; i<MAX_CHAIN_LENGTH; i++){
-
-        int in_use = m->data[curr].in_use;
-        if (in_use == 1){
-            if (strcmp(m->data[curr].key,key)==0){
-                *arg = (m->data[curr].data);
-                return MAP_OK;
-            }
+  for(i = 0; i < MAX_CHAIN_LENGTH; i++){
+    int in_use = map->data[curr].in_use;
+    if (in_use == 1)
+    {
+      if (strcmp(map->data[curr].key,key)==0)
+      {
+        *arg = (map->data[curr].data);
+        return GFC_ERROR_MAP_OK;
+      }
     }
-
-    curr = (curr + 1) % m->table_size;
+    curr = (curr + 1) % map->table_size;
   }
 
   *arg = NULL;
 
-  /* Not found */
-  return MAP_MISSING;
+  return GFC_ERROR_MAP_MISSING;
 }
 
 /*
@@ -295,76 +301,75 @@ int gfc_map_get(gfc_map_p in, char* key, any_t *arg){
  * additional any_t argument is passed to the function as its first
  * argument and the hashmap element is the second.
  */
-int gfc_map_iterate(gfc_map_p in, PFany f, any_t item) {
+int
+gfc_map_iterate(gfc_map_p map, int (*resolve)(const char*, user_data*), void* item) {
   int i;
 
-  /* Cast the hashmap */
-  gfc_map_map* m = (gfc_map_map*) in;
-
-  /* On empty hashmap, return immediately */
-  if (gfc_map_length(m) <= 0)
-    return MAP_MISSING;
+  if (gfc_map_size(map) <= 0)
+    return GFC_ERROR_MAP_MISSING;
 
   /* Linear probing */
-  for(i = 0; i< m->table_size; i++)
-    if(m->data[i].in_use != 0) {
-      any_t data = (any_t) (m->data[i].data);
-      int status = f(item, data);
-      if (status != MAP_OK) {
+  for(i = 0; i< map->table_size; i++)
+    if(map->data[i].in_use != 0) {
+      void* data = (void*) (map->data[i].data);
+      int status = resolve(item, data);
+      if (status != GFC_ERROR_MAP_OK) {
         return status;
       }
     }
 
-    return MAP_OK;
+  return GFC_ERROR_MAP_OK;
 }
 
 /*
  * Remove an element with that key from the map
  */
-int gfc_map_remove(gfc_map_p in, char* key){
+int
+gfc_map_remove(gfc_map_p map, char* key){
   int i;
   int curr;
-  gfc_map_map* m;
-
-  /* Cast the hashmap */
-  m = (gfc_map_map *) in;
 
   /* Find key */
-  curr = gfc_map_hash_int(m, key);
+  curr = gfc_map_hash_int(map, key);
 
   /* Linear probing, if necessary */
-  for(i = 0; i<MAX_CHAIN_LENGTH; i++){
+  for(i = 0; i < MAX_CHAIN_LENGTH; i++){
+    int in_use = map->data[curr].in_use;
+    if (in_use == 1){
+      if (strcmp(map->data[curr].key,key)==0){
+        /* Blank out the fields */
+        map->data[curr].in_use = 0;
+        map->data[curr].data = NULL;
+        map->data[curr].key = NULL;
 
-        int in_use = m->data[curr].in_use;
-        if (in_use == 1){
-            if (strcmp(m->data[curr].key,key)==0){
-                /* Blank out the fields */
-                m->data[curr].in_use = 0;
-                m->data[curr].data = NULL;
-                m->data[curr].key = NULL;
-
-                /* Reduce the size */
-                m->size--;
-                return MAP_OK;
-            }
+        /* Reduce the size */
+        map->size--;
+        return GFC_ERROR_MAP_OK;
+      }
     }
-    curr = (curr + 1) % m->table_size;
+    curr = (curr + 1) % map->table_size;
   }
 
   /* Data not found */
-  return MAP_MISSING;
+  return GFC_ERROR_MAP_MISSING;
 }
 
-/* Deallocate the hashmap */
-void gfc_map_free(gfc_map_p in){
-  gfc_map_map* m = (gfc_map_map*) in;
-  free(m->data);
-  free(m);
+/*!
+** Deallocates the map instance.
+*/
+GFC_API void
+gfc_map_free(gfc_map_p map)
+{
+  free(map->data);
+  free(map);
 }
 
-/* Return the length of the hashmap */
-int gfc_map_length(gfc_map_p in){
-  gfc_map_map* m = (gfc_map_map *) in;
-  if(m != NULL) return m->size;
+/*!
+** Gets the length of map.
+*/
+uint
+gfc_map_size(gfc_map_p map)
+{
+  if(map != NULL) return map->size;
   else return 0;
 }

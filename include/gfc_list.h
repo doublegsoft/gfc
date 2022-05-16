@@ -27,6 +27,8 @@
 typedef struct  gfc_list_s          gfc_list_t;
 typedef         gfc_list_t*         gfc_list_p;
 
+typedef int (*gfc_list_compare)(user_data, user_data);
+
 /*!
 ** @brief
 **
@@ -34,7 +36,7 @@ typedef         gfc_list_t*         gfc_list_p;
 **
 ** @return a list instance
 */
-gfc_list_p
+GFC_API gfc_list_p
 gfc_list_new(void);
 
 /*!
@@ -48,8 +50,22 @@ gfc_list_new(void);
 ** @param data
 **        a user data
 */
-void
+GFC_API void
 gfc_list_append(gfc_list_p list, user_data data);
+
+/*!
+** @brief
+**
+** Sorts items in the list.
+**
+** @param list
+**        a list instance
+**
+** @param compare
+**        the compare function
+*/
+GFC_API void
+gfc_list_sort(gfc_list_p list, gfc_list_compare compare);
 
 /*!
 ** @brief
@@ -62,7 +78,7 @@ gfc_list_append(gfc_list_p list, user_data data);
 ** @param index
 **        an indexed user data to remove, zero-based.
 */
-void
+GFC_API void
 gfc_list_remove(gfc_list_p list, uint index);
 
 /*!
@@ -78,7 +94,7 @@ gfc_list_remove(gfc_list_p list, uint index);
 **
 ** @return the found user data or null
 */
-user_data
+GFC_API user_data
 gfc_list_get(gfc_list_p list, uint index);
 
 /*!
@@ -91,7 +107,7 @@ gfc_list_get(gfc_list_p list, uint index);
 **
 ** @return the size of list
 */
-uint
+GFC_API uint
 gfc_list_size(gfc_list_p list);
 
 /*!
@@ -102,7 +118,7 @@ gfc_list_size(gfc_list_p list);
 ** @param list
 **        a list instance
 */
-void
+GFC_API void
 gfc_list_clear(gfc_list_p list);
 
 /*!
@@ -113,7 +129,7 @@ gfc_list_clear(gfc_list_p list);
 ** @param list
 **        a list to free
 */
-void
+GFC_API void
 gfc_list_free(gfc_list_p list);
 
 #endif // __GFC_LIST_H__
