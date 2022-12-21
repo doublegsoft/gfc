@@ -21,26 +21,66 @@
 
 #include "gfc_utf8.h"
 
+static int32_t
+gfc_utf8_continuation(char c) {
+  return (c & 0xc0) == 0x80;
+}
+
+static int32_t
+gfc_utf8_single(char * c) {
+  return (c[0] & 0x80) == 0x0;
+}
+
+static int32_t
+gfc_utf8_double(char * c) {
+  return (c[0] & 0xe0) == 0xc0 && gfc_utf8_continuation(c[1]);
+}
+
+static int32_t
+gfc_utf8_triple(char * c) {
+  return (c[0] & 0xf0) == 0xe0 && gfc_utf8_continuation(c[1]) && gfc_utf8_continuation(c[2]);
+}
+
+static int32_t
+gfc_utf8_quadruple(char * c) {
+  return (c[0] & 0xf8) == 0xf0 && gfc_utf8_continuation(c[1]) && gfc_utf8_continuation(c[2]) && gfc_utf8_continuation(c[3]);
+}
 
 GFC_API uint
 gfc_utf8_length(char* str)
 {
-  uint    ret = 0;
-  int     len = strlen(str);
-  int     i   = 0;
-  for (i = 0; i < len; i++)
+  size_t i = 0, len = 0;
+  while(str[i])
   {
-    char ch = str[i];
-    if (ch == '\0') break;
-    if ((ch & 0b11110000) == 0b11110000)
-      i += 3;
-    else if ((ch & 0b11100000) == 0b11100000)
-      i += 2;
-    else if ((ch & 0b11000000) == 0b11000000)
-      i += 1;
-    ret++;
+    if (!gfc_utf8_continuation(str[i])) ++len;
+    ++i;
   }
-  return ret;
+  return len;
+}
+
+GFC_API uint
+gfc_utf8_initial(const char* str, char* buff)
+{
+  int     i       = 0;
+  int     size    = 0;
+  if (str == NULL)
+    return 0;
+  char ch = str[0];
+  if (ch == '\0')
+    return 0;
+  if (gfc_utf8_single(str))
+    size = 1;
+  else if (gfc_utf8_double(str))
+    size = 2;
+  else if (gfc_utf8_triple(str))
+    size = 3;
+  else if (gfc_utf8_quadruple(str))
+    size = 4;
+
+  for (i = 0; i < size; i++)
+    buff[i] = str[i];
+  buff[i + 1] = '\0';
+  return i;
 }
 
 GFC_API uint

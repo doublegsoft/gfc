@@ -52,6 +52,9 @@ GFC_API uint
 gfc_utf8_length(char* str);
 
 GFC_API uint
+gfc_utf8_initial(const char* str, char* buff);
+
+GFC_API uint
 gfc_utf8_convert(char* str, gfc_utf8_string_p utf8_str);
 
 #ifdef __cplusplus
