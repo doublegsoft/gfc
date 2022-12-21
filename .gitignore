@@ -1,4 +1,3 @@
-
 .project
 .DS_Store
 .cproject
@@ -6,5 +5,4 @@
 .svn
 bin
 Debug
-gfc 
-gfc-test
+/build/

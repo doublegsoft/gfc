@@ -31,6 +31,8 @@
 #include <errno.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "gfc_type.h"
 
@@ -50,6 +52,7 @@ static pthread_mutex_t    _gfc_log_lock;
 static int                _gfc_log_year = 0;
 static int                _gfc_log_month = 0;
 static int                _gfc_log_day = 0;
+static int                _gfc_log_hour = 0;
 static int                _gfc_log_min = 0;
 
 enum
@@ -71,16 +74,8 @@ gfc_log_open()
   int year = tm.tm_year + 1900;
   int month = tm.tm_mon + 1;
   int day = tm.tm_mday;
-
+  int hour = tm.tm_hour;
   int min = tm.tm_min;
-
-  if (_gfc_log_year == 0)
-  {
-    _gfc_log_year = year;
-    _gfc_log_month = month;
-    _gfc_log_day = day;
-    _gfc_log_min = min;
-  }
 
   char filepath[2048] = {'\0'};
   strcpy(filepath, _gfc_log_dir);
@@ -88,9 +83,36 @@ gfc_log_open()
   strcat(filepath, _gfc_log_app);
   strcat(filepath, ".log");
 
+  if (_gfc_log_year == 0)
+  {
+    if (access(filepath, F_OK) == 0)
+    {
+      // already exists
+      struct stat attrib;
+      stat(filepath, &attrib);
+      char date[10];
+      tm = *gmtime(&(attrib.st_ctime));
+      _gfc_log_year = tm.tm_year + 1900;
+      _gfc_log_month = tm.tm_mon + 1;
+      _gfc_log_day = tm.tm_mday;
+      _gfc_log_hour = tm.tm_hour + 8 /* timezone */;
+      _gfc_log_min = tm.tm_min;
+    }
+    else
+    {
+      _gfc_log_year = year;
+      _gfc_log_month = month;
+      _gfc_log_day = day;
+      _gfc_log_hour = hour;
+      _gfc_log_min = min;
+    }
+  }
+
   if (_gfc_log_year != year ||
       _gfc_log_month != month ||
-      _gfc_log_day != day/* || _gfc_log_min != min*/)
+      _gfc_log_day != day /*||
+      _gfc_log_hour != hour ||
+      _gfc_log_min != min*/)
   {
     char backup_filepath[2048] = {'\0'};
 
@@ -98,7 +120,9 @@ gfc_log_open()
                                                      _gfc_log_app,
                                                      _gfc_log_year,
                                                      _gfc_log_month,
-                                                     _gfc_log_day/*, _gfc_log_min*/);
+                                                     _gfc_log_day/*,
+                                                     _gfc_log_hour,
+                                                     _gfc_log_min*/);
 
     if (_gfc_log_file != NULL)
     {
@@ -111,10 +135,9 @@ gfc_log_open()
     _gfc_log_year = year;
     _gfc_log_month = month;
     _gfc_log_day = day;
+    _gfc_log_hour = hour;
     _gfc_log_min = min;
 
-    FILE* tmp = fopen(filepath, "w");
-    fclose(tmp);
   }
 
   if (_gfc_log_file == NULL)
@@ -140,7 +163,7 @@ gfc_log_init(const char* path, const char* app)
   if (dir) {
     closedir(dir);
   } else {
-    mkdir(path);
+    mkdir(path, 0755);
   }
   strcpy(_gfc_log_dir, path);
   strcpy(_gfc_log_app, app);

@@ -37,6 +37,7 @@ extern "C"
 #include "gfc_lru.h"
 #include "gfc_log.h"
 #include "gfc_sql.h"
+#include "gfc_date.h"
 
 /*!
 ** Added on Dec 26, 2020

@@ -536,7 +536,7 @@ static int put(void *closure, const char *name, int escape, FILE *file)
     const char* str = json_object_get_string(o);
     if (str[0] == '\0')
       print(file, SQL_NULL, escape);
-    else if (operator == SQL_OPERATOR_LIKE)
+    else if (strcmp(operator, SQL_OPERATOR_LIKE) == 0)
     {
       fputs("'%", file);
       print(file, str, escape);

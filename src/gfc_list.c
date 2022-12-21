@@ -1,24 +1,35 @@
 /*
- * gfc
- *
- * Copyright (C) 2019 doublegsoft.open
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+**           .d888
+**          d88P"
+**          888
+**  .d88b.  888888 .d8888b
+** d88P"88b 888   d88P"
+** 888  888 888   888
+** Y88b 888 888   Y88b.
+**  "Y88888 888    "Y8888P
+**      888
+** Y8b d88P
+**  "Y88P"
+**
+** Copyright (C) 2019 doublegsoft.open
+**
+** This program is free software: you can redistribute it and/or modify
+** it under the terms of the GNU General Public License as published by
+** the Free Software Foundation, either version 3 of the License, or
+** (at your option) any later version.
+**
+** This program is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+** GNU General Public License for more details.
+**
+** You should have received a copy of the GNU General Public License
+** along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include <stdlib.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include "gfc_list.h"
 #include "gfc_type.h"
@@ -73,20 +84,20 @@ gfc_list_append(gfc_list_p list, user_data data)
 {
   gfc_list_item_p item = (gfc_list_item_p) malloc(sizeof(gfc_list_item_t));
 
-  item->data = data;
-  if (list->head == NULL)
-    list->head = item;
-
-  if (list->tail == NULL)
-    list->tail = item;
-  else
-  {
-    item->prev = list->tail;
-    list->tail->next = item;
-    // shift tail
-    list->tail = item;
-    list->tail->next = NULL;
-  }
+//  item->data = data;
+//  if (list->head == NULL)
+//    list->head = item;
+//
+//  if (list->tail == NULL)
+//    list->tail = item;
+//  else
+//  {
+//    item->prev = list->tail;
+//    list->tail->next = item;
+//    // shift tail
+//    list->tail = item;
+//    list->tail->next = NULL;
+//  }
   list->pointers[list->size] = (uintptr_t) item;
   list->size++;
 
@@ -185,6 +196,8 @@ gfc_list_size(gfc_list_p list)
 
 /*!
 ** CLEAR
+**
+** @deprecated
 */
 GFC_API void
 gfc_list_clear(gfc_list_p list)
@@ -192,6 +205,7 @@ gfc_list_clear(gfc_list_p list)
   int i;
   for (i = 0; i < list->size; i++)
     gfc_list_remove(list, 0);
+  list->size = 0;
 }
 
 /*!
@@ -200,7 +214,7 @@ gfc_list_clear(gfc_list_p list)
 GFC_API void
 gfc_list_free(gfc_list_p list)
 {
-  gfc_list_clear(list);
+//  gfc_list_clear(list);
   free(list->pointers);
   free(list);
   list = NULL;

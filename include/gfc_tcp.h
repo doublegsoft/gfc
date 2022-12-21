@@ -27,8 +27,8 @@
 ** @since 1.0
 */
 
-#ifndef __GFC_NET_H__
-#define __GFC_NET_H__
+#ifndef __GFC_TCP_H__
+#define __GFC_TCP_H__
 
 #ifdef __cplusplus
 extern "C"
@@ -47,4 +47,4 @@ gfc_tcp_connect(int sock, const char* hostname, int port);
 }
 #endif
 
-#endif // __GFC_NET_H__
+#endif // __GFC_TCP_H__

@@ -34,6 +34,7 @@ libgfc:
 			$(SRC)/gfc_log.c																						\
 			$(SRC)/gfc_sql.c																						\
 			$(SRC)/gfc_sha1.c																						\
+			$(SRC)/gfc_base64.c																					\
 			$(LIBS)																											\
 	-dynamiclib -undefined suppress -flat_namespace -o bin/darwin/libgfc.dylib
 				 

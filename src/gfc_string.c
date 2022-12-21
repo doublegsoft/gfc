@@ -45,18 +45,19 @@
 ** @return a new string object
 */
 GFC_API gfc_string_p
-gfc_string_new(const char* str, int len)
+gfc_string_new(const char* str)
 {
   gfc_string_p ret = (gfc_string_p) malloc(sizeof(gfc_string_p));
-
-  if (str == NULL || len == 0)
-    ret->length = 1;
+  if (str == NULL) return NULL;
+  int len = strlen(str);
+  if (len == 0)
+    len = 1;
   else
-    ret->length = len + 1;
+    len = len + 1;
 
-  ret->buffer = (char*) malloc(sizeof(char) * ret->length);
+  ret->buffer = (char*) malloc(sizeof(char) * len);
   memcpy(ret->buffer, str, len);
-  ret->buffer[ret->length - 1] = '\0';
+  ret->buffer[len - 1] = '\0';
   return ret;
 }
 
@@ -74,20 +75,19 @@ gfc_string_new(const char* str, int len)
 **        the string length as you know
 */
 GFC_API void
-gfc_string_concat(gfc_string_p str, const char* val, int len)
+gfc_string_concat(gfc_string_p str, const char* val)
 {
   if (val == NULL) return;
+  int len = strlen(val);
+  int old_len = strlen(str->buffer);
   
-  int old_len = str->length;
-  str->length += len;
-  
-  str->buffer = (char*) realloc(str->buffer, sizeof(char) * str->length);
+  str->buffer = (char*) realloc(str->buffer, sizeof(char) * (old_len + len + 1));
   
   int i = 0;
   for (; i < len; i++)
-    memset(str->buffer + old_len + i - 1, val[i], 1);
+    memset(str->buffer + old_len + i, val[i], 1);
 
-  str->buffer[str->length - 1] = '\0';
+  str->buffer[old_len + len] = '\0';
 }
 
 /*!
@@ -102,7 +102,7 @@ gfc_string_concat(gfc_string_p str, const char* val, int len)
 GFC_API size_t
 gfc_string_length(gfc_string_p str)
 {
-  return str->length - 1;
+  return strlen(str->buffer);
 }
 
 /*!

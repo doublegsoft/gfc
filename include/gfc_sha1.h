@@ -11,7 +11,7 @@
 ** Y8b d88P
 **  "Y88P"
 **
-** Copyright (C) 2019 doublegsoft.open
+** Copyright (C) 2022 doublegsoft.open
 **
 ** This program is free software: you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by

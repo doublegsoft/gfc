@@ -302,7 +302,7 @@ gfc_map_get(gfc_map_p map, const char* key, user_data* arg)
  * argument and the hashmap element is the second.
  */
 int
-gfc_map_iterate(gfc_map_p map, int (*resolve)(const char*, user_data*), void* item) {
+gfc_map_iterate(gfc_map_p map, int (*resolve)(const char*, user_data*)) {
   int i;
 
   if (gfc_map_size(map) <= 0)
@@ -311,8 +311,9 @@ gfc_map_iterate(gfc_map_p map, int (*resolve)(const char*, user_data*), void* it
   /* Linear probing */
   for(i = 0; i< map->table_size; i++)
     if(map->data[i].in_use != 0) {
+      const char* key = map->data[i].key;
       void* data = (void*) (map->data[i].data);
-      int status = resolve(item, data);
+      int status = resolve(key, data);
       if (status != GFC_ERROR_MAP_OK) {
         return status;
       }
@@ -372,4 +373,17 @@ gfc_map_size(gfc_map_p map)
 {
   if(map != NULL) return map->size;
   else return 0;
+}
+
+static int
+gfc_map_item_free(const char* key, user_data* data)
+{
+  if (data != NULL) free(data);
+  return 0;
+}
+
+void
+gfc_map_deep_free(gfc_map_p map)
+{
+  gfc_map_iterate(map, gfc_map_item_free);
 }

@@ -1,5 +1,15 @@
 /*
- * gfc
+ *           .d888
+ *          d88P"
+ *          888
+ *  .d88b.  888888 .d8888b
+ * d88P"88b 888   d88P"
+ * 888  888 888   888
+ * Y88b 888 888   Y88b.
+ *  "Y88888 888    "Y8888P
+ *      888
+ * Y8b d88P
+ *  "Y88P"
  *
  * Copyright (C) 2019 doublegsoft.open
  *
@@ -112,6 +122,9 @@ gfc_map_size(gfc_map_p map);
 GFC_API void
 gfc_map_clear(gfc_map_p map);
 
+int
+gfc_map_iterate(gfc_map_p map, int (*resolve)(const char*, user_data*));
+
 /*!
 ** @brief
 **
@@ -122,5 +135,16 @@ gfc_map_clear(gfc_map_p map);
 */
 GFC_API void
 gfc_map_free(gfc_map_p map);
+
+/*!
+** @brief
+**
+** Frees the map instance and its data values.
+**
+** @param map
+**        a map to free
+*/
+GFC_API void
+gfc_map_deep_free(gfc_map_p map);
 
 #endif // __GFC_MAP_H__

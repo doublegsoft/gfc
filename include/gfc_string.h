@@ -48,7 +48,6 @@ typedef gfc_string_t*         gfc_string_p;
 struct gfc_string_s
 {
   char*                   buffer;
-  size_t                  length;
 };
 
 /*!
@@ -64,7 +63,7 @@ struct gfc_string_s
 ** @return a new string object
 */
 GFC_API gfc_string_p
-gfc_string_new(const char* str, int len);
+gfc_string_new(const char* str);
 
 /*!
 ** @brief
@@ -80,7 +79,7 @@ gfc_string_new(const char* str, int len);
 **        the string length as you know
 */
 GFC_API void
-gfc_string_concat(gfc_string_p str, const char* val, int len);
+gfc_string_concat(gfc_string_p str, const char* val);
 
 /*!
 ** @brief
