@@ -1,3 +1,21 @@
+## Banner
+
+```
+
+           .d888         
+          d88P"          
+          888            
+ .d88b.  888888 .d8888b 
+d88P"88b 888   d88P"    
+888  888 888   888      
+Y88b 888 888   Y88b.    
+ "Y88888 888    "Y8888P 
+     888                
+Y8b d88P                
+ "Y88P"     
+
+```            
+
 ## Build
 
 ### GFC
@@ -16,4 +34,4 @@ make -f test/Makefile.mingw64
 
 ### 0.2.1
 
-&nbsp;&nbsp;&nbsp;&nbsp;Added sort in list component.
+* Added sort in list component.
