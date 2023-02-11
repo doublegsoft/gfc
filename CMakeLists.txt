@@ -20,6 +20,7 @@ add_library(gfc STATIC
   src/gfc_utf8.c
   src/gfc_uuid.c
   src/gfc_date.c
+  src/gfc_alloc.c
 )
 
 add_executable(test_gfc_string
