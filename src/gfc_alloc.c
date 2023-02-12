@@ -35,7 +35,7 @@
 
 size_t gfc_malloced_memeory = 0;
 
-size_t gfc_alloc_cookie = 123456; // we can't easily prevent some free calls from coming to us from outside, mark them
+size_t gfc_alloc_cookie = 141105; // we can't easily prevent some free calls from coming to us from outside, mark them
 
 void*
 gfc_malloc(size_t sz)
