@@ -21,6 +21,7 @@ add_library(gfc STATIC
   src/gfc_uuid.c
   src/gfc_date.c
   src/gfc_alloc.c
+  src/gfc_btree.c
 )
 
 add_executable(test_gfc_string
