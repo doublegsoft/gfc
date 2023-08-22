@@ -38,7 +38,7 @@ extern "C"
 #include "gfc_log.h"
 #include "gfc_sql.h"
 #include "gfc_date.h"
-#include "gfc_alloc.h"
+#include "gfc_gc.h"
 
 /*!
 ** Added on Dec 26, 2020

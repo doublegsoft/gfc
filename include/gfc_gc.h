@@ -26,8 +26,8 @@
 ** You should have received a copy of the GNU General Public License
 ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef __GFC_ALLOC_H__
-#define __GFC_ALLOC_H__
+#ifndef __GFC_GC_H__
+#define __GFC_GC_H__
 
 #ifdef __cplusplus
 extern "C"
@@ -37,25 +37,27 @@ extern "C"
 #include <stdint.h>
 
 void*
-gfc_malloc(size_t sz);
+gfc_gc_malloc(size_t sz);
 
 
 // can fail to produce an aligned result if alignment does not divide 2 * size_t
 int
-gfc_posix_memalign(void **memptr, size_t alignment, size_t size);
+gfc_gc_memalign(void **memptr, size_t alignment, size_t size);
 
 void*
-gfc_calloc(size_t count, size_t size);
+gfc_gc_calloc(size_t count, size_t size);
 
 void
-gfc_free(void *p);
+gfc_gc_free(void *p);
 
 
 void*
-gfc_realloc(void *p, size_t sz);
+gfc_gc_realloc(void *p, size_t sz);
+
+size_t gfc_gc_used();
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // __GFC_ALLOC_H__
+#endif // __GFC_GC_H__

@@ -31,28 +31,28 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "gfc_alloc.h"
+#include "../include/gfc_gc.h"
 
-size_t gfc_malloced_memeory = 0;
+static size_t gfc_malloced_memeory = 0;
 
-size_t gfc_alloc_cookie = 141105; // we can't easily prevent some free calls from coming to us from outside, mark them
+static size_t gfc_alloc_cookie = 141105; // we can't easily prevent some free calls from coming to us from outside, mark them
 
 void*
-gfc_malloc(size_t sz)
+gfc_gc_malloc(size_t sz)
 {
-  void *(*libc_malloc)(size_t) = dlsym(RTLD_NEXT, "malloc");
-  void * answerplus =  libc_malloc(sz + sizeof(size_t) + sizeof(gfc_alloc_cookie));
+  void*(*libc_malloc)(size_t) = dlsym(RTLD_NEXT, "malloc");
+  void* answerplus =  libc_malloc(sz + sizeof(size_t) + sizeof(gfc_alloc_cookie));
   if(answerplus == NULL) return answerplus;// nothing can be done
   gfc_malloced_memeory += sz;
-  memcpy(answerplus ,&gfc_alloc_cookie,sizeof(gfc_alloc_cookie));
-  memcpy((char *) answerplus + sizeof(gfc_alloc_cookie),&sz,sizeof(sz));
+  memcpy(answerplus ,&gfc_alloc_cookie, sizeof(gfc_alloc_cookie));
+  memcpy((char *) answerplus + sizeof(gfc_alloc_cookie), &sz, sizeof(sz));
   return ((char *) answerplus) + sizeof(size_t) + sizeof(gfc_alloc_cookie);
 }
 
 
 // can fail to produce an aligned result if alignment does not divide 2 * size_t
 int
-gfc_posix_memalign(void **memptr, size_t alignment, size_t size)
+gfc_gc_memalign(void **memptr, size_t alignment, size_t size)
 {
   int(*libc_posix_memalign)(void **, size_t, size_t) = dlsym(RTLD_NEXT, "posix_memalign");
   size_t offset = (sizeof(size_t) + sizeof(gfc_alloc_cookie) );
@@ -62,17 +62,17 @@ gfc_posix_memalign(void **memptr, size_t alignment, size_t size)
   gfc_malloced_memeory += size;
   memcpy(answerplus ,&gfc_alloc_cookie,sizeof(gfc_alloc_cookie));
   memcpy((char *) answerplus + sizeof(gfc_alloc_cookie),&size,sizeof(size));
-  * memptr = (char *) answerplus + offset;
+  *memptr = (char *) answerplus + offset;
   return ret;
 }
 
 void*
-gfc_calloc(size_t count, size_t size) {
+gfc_gc_calloc(size_t count, size_t size) {
   size_t sz = count * size;
   void *(*libc_malloc)(size_t) = dlsym(RTLD_NEXT, "malloc");
   size_t volume = sz + sizeof(size_t) + sizeof(gfc_alloc_cookie);
   void * answerplus =  libc_malloc(volume);
-  memset(answerplus,0,volume);
+  memset(answerplus, 0, volume);
   if(answerplus == NULL) return answerplus;// nothing can be done
   gfc_malloced_memeory += sz;
   memcpy(answerplus ,&gfc_alloc_cookie,sizeof(gfc_alloc_cookie));
@@ -81,11 +81,11 @@ gfc_calloc(size_t count, size_t size) {
 }
 
 void
-gfc_free(void *p)
+gfc_gc_free(void* p)
 {
   if(p == NULL) return; // nothing to do
   void (*libc_free)(void*) = dlsym(RTLD_NEXT, "free");
-  void * truep = ((char *) p) - sizeof(size_t) - sizeof(gfc_alloc_cookie);
+  void* truep = ((char *) p) - sizeof(size_t) - sizeof(gfc_alloc_cookie);
   size_t cookie;
   // the cookie approach is kind of a hack, don't use in production code!
   memcpy(&cookie ,truep,sizeof(gfc_alloc_cookie)); // in some case, this might read data outside of bounds
@@ -101,7 +101,7 @@ gfc_free(void *p)
 
 
 void*
-gfc_realloc(void *p, size_t sz)
+gfc_gc_realloc(void *p, size_t sz)
 {
   if(p == NULL) return malloc(sz);
   // implement
@@ -121,5 +121,10 @@ gfc_realloc(void *p, size_t sz)
   gfc_malloced_memeory += sz;
   memcpy((char *) newp + sizeof(gfc_alloc_cookie),&sz,sizeof(sz));
   return newp + sizeof(size_t) + sizeof(gfc_alloc_cookie);
+}
+
+size_t gfc_gc_used()
+{
+  return gfc_malloced_memeory;
 }
 
