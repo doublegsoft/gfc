@@ -36,8 +36,46 @@ extern "C"
 
 #include <stdint.h>
 
+#define GFC_GC_OK                               0
+#define GFC_GC_IS_NULL                          204
+#define GFC_GC_NOT_FOUND                        404
+#define GFC_GC_KERNEL_ERROR                     500
+
+/*!
+** initializes gc context.
+*/
+void
+gfc_gc_init(void);
+
+/*!
+** closes and free gc context.
+*/
+void
+gfc_gc_close(void);
+
+/*!
+** gets total byte size which is managed by gc context.
+*/
+size_t
+gfc_gc_total(void);
+
+/*!
+** free memory which the ptr points to.
+*/
+int
+gfc_gc_free(void* ptr);
+
+/*!
+** allocates a block of memory.
+*/
 void*
-gfc_gc_malloc(size_t sz);
+gfc_gc_malloc(size_t size, size_t len);
+
+/*!
+** reallocates a new size block of memory to the pointer.
+*/
+void*
+gfc_gc_realloc(void* ptr, size_t size, size_t len);
 
 
 // can fail to produce an aligned result if alignment does not divide 2 * size_t
@@ -47,12 +85,12 @@ gfc_gc_memalign(void **memptr, size_t alignment, size_t size);
 void*
 gfc_gc_calloc(size_t count, size_t size);
 
-void
-gfc_gc_free(void *p);
+//void
+//gfc_gc_free(void *p);
 
 
-void*
-gfc_gc_realloc(void *p, size_t sz);
+//void*
+//gfc_gc_realloc(void *p, size_t sz);
 
 size_t gfc_gc_used();
 
