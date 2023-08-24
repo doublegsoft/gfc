@@ -16,16 +16,17 @@ add_library(gfc STATIC
   src/gfc_sha1.c
   src/gfc_string.c
   src/gfc_tcp.c
-  src/gfc_threads.c
   src/gfc_utf8.c
   src/gfc_uuid.c
   src/gfc_date.c
   src/gfc_btree.c
+  src/gfc_mt.c
   src/gfc_gc.c
 )
 
 add_executable(test_gfc_string
   src/gfc_string.c
+  src/gfc_gc.c
   test/test_gfc_string.c
 )
 
@@ -37,4 +38,10 @@ add_executable(test_gfc_log
 add_executable(test_gfc_gc
   src/gfc_gc.c
   test/test_gfc_gc.c
+)
+
+add_executable(test_gfc_mt
+  src/gfc_mt.c
+  src/gfc_gc.c
+  test/test_gfc_mt.c
 )

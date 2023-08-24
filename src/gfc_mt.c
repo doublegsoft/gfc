@@ -19,9 +19,10 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-#include "gfc_threads.h"
+#include "gfc_mt.h"
+#include "gfc_gc.h"
 
-struct gfc_threads_s
+struct gfc_mt_s
 {
   /*!
   ** the present size.
@@ -33,20 +34,26 @@ struct gfc_threads_s
   */
   uint                max;
 
+  /*!
+  ** thread lock.
+  */
   pthread_mutex_t     lock;
 
+  /*!
+  ** thread condition race.
+  */
   pthread_cond_t      cond;
 };
 
 typedef user_data (*THREAD_ENTRY)(user_data);
 
-typedef struct  gfc_threads_data_s     gfc_threads_data_t;
-typedef         gfc_threads_data_t*    gfc_threads_data_p;
+typedef struct  gfc_mt_data_s     gfc_mt_data_t;
+typedef         gfc_mt_data_t*    gfc_mt_data_p;
 
-struct gfc_threads_data_s
+struct gfc_mt_data_s
 {
 
-  gfc_threads_p       threads;
+  gfc_mt_p       threads;
 
   void*               userdata;
 
@@ -57,9 +64,9 @@ struct gfc_threads_data_s
 ** It is a framework thread function.
 */
 static void*
-gfc_threads_entry(void* data)
+gfc_mt_entry(void* data)
 {
-  gfc_threads_data_t* threads_data = (gfc_threads_data_t*) data;
+  gfc_mt_data_t* threads_data = (gfc_mt_data_t*) data;
   // invoke user function
   threads_data->entry(threads_data->userdata);
 
@@ -68,14 +75,14 @@ gfc_threads_entry(void* data)
   pthread_cond_signal(&threads_data->threads->cond);
   pthread_mutex_unlock(&threads_data->threads->lock);
 
-  free(threads_data);
+  gfc_gc_free(threads_data);
   return NULL;
 }
 
-GFC_API gfc_threads_p
-gfc_threads_new(uint count)
+GFC_API gfc_mt_p
+gfc_mt_new(uint count)
 {
-  gfc_threads_p ret = (gfc_threads_p) malloc(sizeof(gfc_threads_t));
+  gfc_mt_p ret = (gfc_mt_p) gfc_gc_malloc(sizeof(gfc_mt_t), 1);
   pthread_mutex_init(&ret->lock, NULL);
   pthread_cond_init(&ret->cond, NULL);
 
@@ -85,7 +92,7 @@ gfc_threads_new(uint count)
 }
 
 GFC_API void
-gfc_threads_do(gfc_threads_p threads, void*(*fun)(void* data), void* data)
+gfc_mt_do(gfc_mt_p threads, void*(*fun)(void* data), void* data)
 {
   int res = 0;
   pthread_mutex_lock(&threads->lock);
@@ -97,11 +104,11 @@ gfc_threads_do(gfc_threads_p threads, void*(*fun)(void* data), void* data)
 
   threads->size++;
   pthread_t thid;
-  gfc_threads_data_p threads_data = (gfc_threads_data_p) malloc(sizeof(gfc_threads_data_t));
+  gfc_mt_data_p threads_data = (gfc_mt_data_p) gfc_gc_malloc(sizeof(gfc_mt_data_t), 1);
   threads_data->threads = threads;
   threads_data->userdata = data;
   threads_data->entry = fun;
-  res = pthread_create(&thid, NULL, gfc_threads_entry, threads_data);
+  res = pthread_create(&thid, NULL, gfc_mt_entry, threads_data);
   if (res != 0)
   {
     threads->size--;
@@ -109,7 +116,7 @@ gfc_threads_do(gfc_threads_p threads, void*(*fun)(void* data), void* data)
 }
 
 GFC_API void
-gfc_threads_free(gfc_threads_p threads)
+gfc_mt_free(gfc_mt_p threads)
 {
   pthread_mutex_lock(&threads->lock);
   while (threads->size > 0)
@@ -118,6 +125,12 @@ gfc_threads_free(gfc_threads_p threads)
   }
   pthread_mutex_unlock(&threads->lock);
 
-  free(threads);
+  gfc_gc_free(threads);
+}
+
+GFC_API int
+gfc_mt_size(gfc_mt_p mt)
+{
+  return mt->size;
 }
 

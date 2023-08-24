@@ -17,8 +17,8 @@
 ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef __GFC_THREADS_H__
-#define __GFC_THREADS_H__
+#ifndef __GFC_MT_H__
+#define __GFC_MT_H__
 
 #include "gfc_type.h"
 
@@ -27,8 +27,8 @@ extern "C"
 {
 #endif
 
-typedef struct  gfc_threads_s     gfc_threads_t;
-typedef         gfc_threads_t*    gfc_threads_p;
+typedef struct  gfc_mt_s     gfc_mt_t;
+typedef         gfc_mt_t*    gfc_mt_p;
 
 /*!
 ** Creates a threads context instance.
@@ -38,8 +38,8 @@ typedef         gfc_threads_t*    gfc_threads_p;
 **
 ** @return a threads context instance
 */
-GFC_API gfc_threads_p
-gfc_threads_new(uint count);
+GFC_API gfc_mt_p
+gfc_mt_new(uint count);
 
 /*!
 ** Sets the thread working function in threads context.
@@ -54,7 +54,7 @@ gfc_threads_new(uint count);
 **        the thread working function parameters
 */
 GFC_API void
-gfc_threads_do(gfc_threads_p threads, void*(*fun)(void* data), void* data);
+gfc_mt_do(gfc_mt_p threads, void*(*fun)(void* data), void* data);
 
 /*!
 ** Frees a threads context instance.
@@ -63,10 +63,13 @@ gfc_threads_do(gfc_threads_p threads, void*(*fun)(void* data), void* data);
 **        threads context instance
 */
 GFC_API void
-gfc_threads_free(gfc_threads_p threads);
+gfc_mt_free(gfc_mt_p threads);
+
+GFC_API int
+gfc_mt_size(gfc_mt_p mt);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // __GFC_THREADS_H__
+#endif // __GFC_MT_H__

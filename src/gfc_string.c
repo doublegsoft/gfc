@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #ifdef _WIN32
 #  ifdef _MSC_VER
@@ -31,6 +32,7 @@
 
 #include "gfc_string.h"
 #include "gfc_type.h"
+#include "gfc_gc.h"
 
 /*!
 ** @brief
@@ -47,7 +49,7 @@
 GFC_API gfc_string_p
 gfc_string_new(const char* str)
 {
-  gfc_string_p ret = (gfc_string_p) malloc(sizeof(gfc_string_p));
+  gfc_string_p ret = (gfc_string_p) gfc_gc_malloc(sizeof(gfc_string_p), 1);
   if (str == NULL) return NULL;
   int len = strlen(str);
   if (len == 0)
@@ -55,7 +57,7 @@ gfc_string_new(const char* str)
   else
     len = len + 1;
 
-  ret->buffer = (char*) malloc(sizeof(char) * len);
+  ret->buffer = (char*) gfc_gc_malloc(sizeof(char), len);
   memcpy(ret->buffer, str, len);
   ret->buffer[len - 1] = '\0';
   return ret;
@@ -81,7 +83,7 @@ gfc_string_concat(gfc_string_p str, const char* val)
   int len = strlen(val);
   int old_len = strlen(str->buffer);
   
-  str->buffer = (char*) realloc(str->buffer, sizeof(char) * (old_len + len + 1));
+  str->buffer = (char*) gfc_gc_realloc(str->buffer, sizeof(char), (old_len + len + 1));
   
   int i = 0;
   for (; i < len; i++)
@@ -112,8 +114,8 @@ gfc_string_length(gfc_string_p str)
 GFC_API void
 gfc_string_free(gfc_string_p str)
 {
-  free(str->buffer);
-  free(str);
+  assert(GFC_GC_OK == gfc_gc_free(str->buffer));
+  assert(GFC_GC_OK == gfc_gc_free(str));
 }
 
 GFC_API void

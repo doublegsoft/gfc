@@ -7,6 +7,7 @@
 int
 main()
 {
+  gfc_gc_init();
   gfc_string_p str = gfc_string_new("anybody");
 
   int i = 0;
