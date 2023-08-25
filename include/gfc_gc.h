@@ -59,6 +59,9 @@ gfc_gc_close(void);
 size_t
 gfc_gc_total(void);
 
+size_t
+gfc_gc_length(void);
+
 /*!
 ** free memory which the ptr points to.
 */
