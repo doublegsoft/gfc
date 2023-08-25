@@ -30,9 +30,11 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <assert.h>
 
 #include "gfc_list.h"
 #include "gfc_type.h"
+#include "gfc_gc.h"
 
 #define INCREMENTAL_CAPACITY            10
 
@@ -40,21 +42,19 @@
 ** @private
 */
 
-typedef struct  gfc_list_item_s     gfc_list_item_t;
-typedef         gfc_list_item_t*    gfc_list_item_p;
-
-typedef struct gfc_list_item_s
-{
-  user_data                   data;
-  gfc_list_item_p             prev;
-  gfc_list_item_p             next;
-}
-gfc_list_item_t;
+//typedef struct  gfc_list_item_s     gfc_list_item_t;
+//typedef         gfc_list_item_t*    gfc_list_item_p;
+//
+//typedef struct gfc_list_item_s
+//{
+//  user_data                   data;
+//  gfc_list_item_p             prev;
+//  gfc_list_item_p             next;
+//}
+//gfc_list_item_t;
 
 struct gfc_list_s
 {
-  gfc_list_item_p             head;
-  gfc_list_item_p             tail;
   size_t                      size;
 
   uintptr_t*                  pointers;
@@ -67,12 +67,11 @@ struct gfc_list_s
 GFC_API gfc_list_p
 gfc_list_new(void)
 {
-  gfc_list_p ret = (gfc_list_p) malloc(sizeof(gfc_list_t));
+  gfc_list_p ret = (gfc_list_p) gfc_gc_malloc(sizeof(gfc_list_t), 1);
 
-  ret->head = ret->tail = NULL;
   ret->size = 0;
   ret->capacity = INCREMENTAL_CAPACITY;
-  ret->pointers = (uintptr_t*) malloc(sizeof(uintptr_t) * ret->capacity);
+  ret->pointers = (uintptr_t*) gfc_gc_malloc(sizeof(uintptr_t), ret->capacity);
   return ret;
 }
 
@@ -82,29 +81,13 @@ gfc_list_new(void)
 GFC_API void
 gfc_list_append(gfc_list_p list, user_data data)
 {
-  gfc_list_item_p item = (gfc_list_item_p) malloc(sizeof(gfc_list_item_t));
-
-//  item->data = data;
-//  if (list->head == NULL)
-//    list->head = item;
-//
-//  if (list->tail == NULL)
-//    list->tail = item;
-//  else
-//  {
-//    item->prev = list->tail;
-//    list->tail->next = item;
-//    // shift tail
-//    list->tail = item;
-//    list->tail->next = NULL;
-//  }
-  list->pointers[list->size] = (uintptr_t) item;
+  list->pointers[list->size] = (uintptr_t) data;
   list->size++;
 
   if (list->size == list->capacity)
   {
     list->capacity += INCREMENTAL_CAPACITY;
-    list->pointers = (uintptr_t*) realloc(list->pointers, sizeof(uintptr_t) * list->capacity);
+    list->pointers = (uintptr_t*) gfc_gc_realloc(list->pointers, sizeof(uintptr_t), list->capacity);
   }
 }
 
@@ -120,16 +103,16 @@ gfc_list_sort(gfc_list_p list, gfc_list_compare compare)
     {
       uintptr_t ptr_j = list->pointers[j];
       uintptr_t ptr_j_1 = list->pointers[j + 1];
-      gfc_list_item_t* item_j = (gfc_list_item_t*) ptr_j;
-      gfc_list_item_t* item_j_1 = (gfc_list_item_t*) ptr_j_1;
-      if (compare(item_j->data, item_j_1->data) == 1)
-      {
-//        uintptr_t tmp = ptr_j;
-//        ptr_j = ptr_j_1;
-//        ptr_j_1 = tmp;
-        list->pointers[j] = (uintptr_t) item_j_1;
-        list->pointers[j + 1] = (uintptr_t) item_j;
-      }
+//      gfc_list_item_t* item_j = (gfc_list_item_t*) ptr_j;
+//      gfc_list_item_t* item_j_1 = (gfc_list_item_t*) ptr_j_1;
+//      if (compare(item_j->data, item_j_1->data) == 1)
+//      {
+////        uintptr_t tmp = ptr_j;
+////        ptr_j = ptr_j_1;
+////        ptr_j_1 = tmp;
+//        list->pointers[j] = (uintptr_t) item_j_1;
+//        list->pointers[j + 1] = (uintptr_t) item_j;
+//      }
     }
 }
 
@@ -142,31 +125,15 @@ gfc_list_remove(gfc_list_p list, uint index)
   if (index >= list->size)
     return;
 
-  int idx = 0;
-  gfc_list_item_t *remove = list->head;
-  while (idx != index)
+  int i = 0;
+  for (i = index; i < list->size - 1; i++)
   {
-    remove = remove->next;
-    idx++;
+    user_data data = (user_data) list->pointers[i + 1];
+    list->pointers[i] = (uintptr_t) data;
   }
 
-  if (remove == list->head)
-  {
-    list->head = list->head->next;
-    if (list->head != NULL)
-      list->head->prev = NULL;
-  }
-  else if (remove == list->tail)
-  {
-    list->tail = list->tail->prev;
-    list->tail->next = NULL;
-  }
-  else
-  {
-    remove->prev->next = remove->next;
-    remove->next->prev = remove->prev;
-  }
-  free(remove);
+  list->pointers[list->size - 1] = 0;
+
   list->size--;
 }
 
@@ -181,8 +148,7 @@ gfc_list_get(gfc_list_p list, uint index)
 
   uintptr_t ptr = list->pointers[index];
 
-  gfc_list_item_t* found = (gfc_list_item_t*) ptr;
-  return found->data;
+  return (user_data) ptr;
 }
 
 /*!
@@ -215,7 +181,7 @@ GFC_API void
 gfc_list_free(gfc_list_p list)
 {
 //  gfc_list_clear(list);
-  free(list->pointers);
-  free(list);
+  assert(GFC_GC_OK == gfc_gc_free(list->pointers));
+  assert(GFC_GC_OK == gfc_gc_free(list));
   list = NULL;
 }

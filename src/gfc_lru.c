@@ -1,6 +1,36 @@
+/*
+**           .d888
+**          d88P"
+**          888
+**  .d88b.  888888 .d8888b
+** d88P"88b 888   d88P"
+** 888  888 888   888
+** Y88b 888 888   Y88b.
+**  "Y88888 888    "Y8888P
+**      888
+** Y8b d88P
+**  "Y88P"
+**
+** Copyright (C) 2023 doublegsoft.open
+**
+** This program is free software: you can redistribute it and/or modify
+** it under the terms of the GNU General Public License as published by
+** the Free Software Foundation, either version 3 of the License, or
+** (at your option) any later version.
+**
+** This program is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+** GNU General Public License for more details.
+**
+** You should have received a copy of the GNU General Public License
+** along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+#include <assert.h>
 
 #include "gfc_lru.h"
 #include "gfc_type.h"
+#include "gfc_gc.h"
 
 
 // ------------------------------------------
@@ -61,7 +91,7 @@ gfc_lru_item_remove(gfc_lru_p lru, gfc_lru_item_p prev, gfc_lru_item_p item, uin
   // free memory and update the free memory counter
   lru->free_memory += item->value_length;
 //  free(item->value);
-  free(item->key);
+  assert(GFC_GC_OK == gfc_gc_free(item->key));
 
   // push the item to the free items queue
   memset(item, 0, sizeof(gfc_lru_item_t));
@@ -110,7 +140,7 @@ gfc_lru_item_pop(gfc_lru_p lru) {
     lru->free_items = item->next;
   }
   else
-    item = (gfc_lru_item_p) calloc(sizeof(gfc_lru_item_t), 1);
+    item = (gfc_lru_item_p) gfc_gc_malloc(sizeof(gfc_lru_item_t), 1);
   return item;
 }
 
@@ -131,7 +161,7 @@ gfc_lru_item_pop(gfc_lru_p lru) {
 GFC_API gfc_lru_p
 gfc_lru_new(uint64_t cache_size, uint32_t average_length) {
   // create the cache
-  gfc_lru_p lru = (gfc_lru_p) calloc(sizeof(gfc_lru_t), 1);
+  gfc_lru_p lru = (gfc_lru_p) gfc_gc_malloc(sizeof(gfc_lru_t), 1);
   if(!lru) {
     perror("LRU Cache unable to create cache object");
     return NULL;
@@ -143,20 +173,20 @@ gfc_lru_new(uint64_t cache_size, uint32_t average_length) {
   lru->seed                 = time(NULL);
 
   // size the hash table to a guestimate of the number of slots required (assuming a perfect hash)
-  lru->items = (gfc_lru_item_p*) calloc(sizeof(gfc_lru_item_p), lru->hash_table_size);
+  lru->items = (gfc_lru_item_p*) gfc_gc_malloc(sizeof(gfc_lru_item_p), lru->hash_table_size);
   if(!lru->items)
   {
     perror("LRU Cache unable to create cache hash table");
-    free(lru);
+    assert(GFC_GC_OK == gfc_gc_free(lru));
     return NULL;
   }
 
   // all cache calls are guarded by a mutex
-  lru->mutex = (pthread_mutex_t *) malloc(sizeof(pthread_mutex_t));
+  lru->mutex = (pthread_mutex_t *) gfc_gc_malloc(sizeof(pthread_mutex_t), 1);
   if(pthread_mutex_init(lru->mutex, NULL)) {
     perror("LRU Cache unable to initialise mutex");
-    free(lru->items);
-    free(lru);
+    assert(GFC_GC_OK == gfc_gc_free(lru->items));
+    assert(GFC_GC_OK == gfc_gc_free(lru));
     return NULL;
   }
   return lru;
@@ -174,11 +204,11 @@ gfc_lru_free(gfc_lru_p lru) {
       while(item)
       {
         next = (gfc_lru_item_p) item->next;
-        free(item);
+        assert(GFC_GC_OK == gfc_gc_free(item));
         item = next;
       }
     }
-    free(lru->items);
+    assert(GFC_GC_OK == gfc_gc_free(lru->items));
   }
 
   // free the cache
@@ -190,7 +220,7 @@ gfc_lru_free(gfc_lru_p lru) {
       return GFC_LRU_PTHREAD_ERROR;
     }
   }
-  free(lru);
+  assert(GFC_GC_OK == gfc_gc_free(lru));
 
   return GFC_LRU_NO_ERROR;
 }

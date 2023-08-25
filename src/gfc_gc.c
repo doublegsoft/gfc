@@ -36,13 +36,10 @@
 
 #include "../include/gfc_gc.h"
 
+#define GFC_GC_INC_COUNT      64
+
 typedef struct gfc_gc_ptr_s
 {
-  /*!
-  ** the pointer to memory which is using or freed.
-  */
-  char          used;
-
   /*!
   ** the pointer to memory.
   */
@@ -66,12 +63,14 @@ typedef struct gfc_gc_ptr_s
   /*!
   ** the timestamp to allocate memory
   */
-  time_t            ts;
+  time_t        ts;
 }
 gfc_gc_ptr_t;
 
-typedef struct gfc_gc_ctx_s
+typedef struct gfc_gc_s
 {
+
+  unsigned char*    bits;
 
   /*!
   ** the managed memory pointers.
@@ -93,27 +92,35 @@ typedef struct gfc_gc_ctx_s
   */
   time_t            ts;
 }
-gfc_gc_ctx_t;
+gfc_gc_t;
 
 static size_t gfc_malloced_memeory = 0;
 
 static size_t gfc_alloc_cookie = 141105; // we can't easily prevent some free calls from coming to us from outside, mark them
 
-static gfc_gc_ctx_t* gc_ctx = NULL;
+static gfc_gc_t* gc_ctx = NULL;
 
 
 void
 gfc_gc_init(void)
 {
-  gc_ctx = (gfc_gc_ctx_t*)malloc(sizeof(gfc_gc_ctx_t));
-  gc_ctx->len = 10;
+  gc_ctx = (gfc_gc_t*)malloc(sizeof(gfc_gc_t));
+  gc_ctx->len = GFC_GC_INC_COUNT;
   gc_ctx->total = 0;
-  gc_ctx->ptrs = calloc(10, sizeof(gfc_gc_ptr_t));
+  gc_ctx->bits = calloc(GFC_GC_INC_COUNT / 8, sizeof(unsigned char));
+  gc_ctx->ptrs = calloc(GFC_GC_INC_COUNT, sizeof(gfc_gc_ptr_t));
+
+  memset(gc_ctx->bits, 0, GFC_GC_INC_COUNT / 8 * sizeof(unsigned char));
+  memset(gc_ctx->ptrs, 0, GFC_GC_INC_COUNT * sizeof(gfc_gc_ptr_t));
+
+  assert(gc_ctx->bits[0] == 0);
 }
 
 void
 gfc_gc_close(void)
 {
+  free(gc_ctx->bits);
+  free(gc_ctx->ptrs);
   free(gc_ctx);
 }
 
@@ -133,39 +140,89 @@ gfc_gc_malloc(size_t size, size_t len)
     return NULL;
   }
   int idx = 0;
-  int is_set = 0;
+  int bytelen = gc_ctx->len / 8;
+  int bitidx = 0;
+  for (; idx < bytelen; idx++)
+  {
+    int res = (gc_ctx->bits[idx] & 0b11111111);
+    if (res == 0b11111111)
+      continue;
 
-  for (; idx < gc_ctx->len; idx++)
-  {
-    if ((int)gc_ctx->ptrs[idx].used == 0)
-    {
-      memset(&gc_ctx->ptrs[idx], 0, sizeof(gfc_gc_ptr_t));
-      gc_ctx->ptrs[idx].ptr = ret;
-      gc_ctx->ptrs[idx].used = 1;
-      gc_ctx->ptrs[idx].size = size;
-      gc_ctx->ptrs[idx].total = total;
-      gc_ctx->ptrs[idx].len = len;
-      time(&gc_ctx->ptrs[idx].ts);
-      is_set = 1;
-      break;
-    }
+    int byte = gc_ctx->bits[idx];
+    if ((byte | 0b01111111) == 0b01111111)
+      bitidx = 0;
+    else if ((byte | 0b10111111) == 0b10111111)
+      bitidx = 1;
+    else if ((byte | 0b11011111) == 0b11011111)
+      bitidx = 2;
+    else if ((byte | 0b11101111) == 0b11101111)
+      bitidx = 3;
+    else if ((byte | 0b11110111) == 0b11110111)
+      bitidx = 4;
+    else if ((byte | 0b11111011) == 0b11111011)
+      bitidx = 5;
+    else if ((byte | 0b11111101) == 0b11111101)
+      bitidx = 6;
+    else if ((byte | 0b11111110) == 0b11111110)
+      bitidx = 7;
+    break;
   }
-  if (is_set == 0)
+
+  int ptridx = idx * 8 + bitidx;
+
+  if (ptridx >= gc_ctx->len)
   {
-    gc_ctx->len += 10;
+    gc_ctx->len += GFC_GC_INC_COUNT;
+    gc_ctx->bits = realloc(gc_ctx->bits, (gc_ctx->len / 8) * sizeof(unsigned char));
     gc_ctx->ptrs = realloc(gc_ctx->ptrs, gc_ctx->len * sizeof(gfc_gc_ptr_t));
-    memset(&gc_ctx->ptrs[idx], 0, sizeof(gfc_gc_ptr_t));
-    gc_ctx->ptrs[idx].ptr = ret;
-    gc_ctx->ptrs[idx].used = 1;
-    gc_ctx->ptrs[idx].size = size;
-    gc_ctx->ptrs[idx].total = total;
-    gc_ctx->ptrs[idx].len = len;
-    time(&gc_ctx->ptrs[idx].ts);
+    memset(&gc_ctx->bits[ptridx], 0, sizeof(unsigned char));
+    memset(&gc_ctx->ptrs[ptridx], 0, sizeof(gfc_gc_ptr_t));
+    gc_ctx->bits[ptridx / 8] = 0b10000000;
+    gc_ctx->ptrs[ptridx].ptr = ret;
+    gc_ctx->ptrs[ptridx].size = size;
+    gc_ctx->ptrs[ptridx].total = total;
+    gc_ctx->ptrs[ptridx].len = len;
+    time(&gc_ctx->ptrs[ptridx].ts);
   }
-  gc_ctx->ts = gc_ctx->ptrs[idx].ts;
+  else
+  {
+    switch(bitidx)
+    {
+      case 0:
+        gc_ctx->bits[ptridx / 8] |= 0b10000000;
+        break;
+      case 1:
+        gc_ctx->bits[ptridx / 8] |= 0b01000000;
+        break;
+      case 2:
+        gc_ctx->bits[ptridx / 8] |= 0b00100000;
+        break;
+      case 3:
+        gc_ctx->bits[ptridx / 8] |= 0b00010000;
+        break;
+      case 4:
+        gc_ctx->bits[ptridx / 8] |= 0b00001000;
+        break;
+      case 5:
+        gc_ctx->bits[ptridx / 8] |= 0b00000100;
+        break;
+      case 6:
+        gc_ctx->bits[ptridx / 8] |= 0b00000010;
+        break;
+      case 7:
+        gc_ctx->bits[ptridx / 8] |= 0b00000001;
+        break;
+    }
+    gc_ctx->ptrs[ptridx].ptr = ret;
+    gc_ctx->ptrs[ptridx].size = size;
+    gc_ctx->ptrs[ptridx].total = total;
+    gc_ctx->ptrs[ptridx].len = len;
+    time(&gc_ctx->ptrs[ptridx].ts);
+  }
+  gc_ctx->ts = gc_ctx->ptrs[ptridx].ts;
   gc_ctx->total += total;
 
-  assert(gc_ctx->ptrs[idx].ptr == ret);
+  assert(gc_ctx->ptrs[ptridx].ptr == ret);
 
   return ret;
 }
@@ -233,11 +290,40 @@ gfc_gc_free(void* ptr)
   {
     if (gc_ctx->ptrs[i].ptr == ptr)
     {
+      int byteidx = i / 8;
+      int bitidx = i % 8;
+
       gc_ctx->total -= gc_ctx->ptrs[i].total;
-      gc_ctx->ptrs[i].used = 0;
       gc_ctx->ptrs[i].size = 0;
       gc_ctx->ptrs[i].len = 0;
       gc_ctx->ptrs[i].total = 0;
+
+      switch (bitidx) {
+        case 0:
+          gc_ctx->bits[byteidx] |= 0b10000000;
+          break;
+        case 1:
+          gc_ctx->bits[byteidx] |= 0b01000000;
+          break;
+        case 2:
+          gc_ctx->bits[byteidx] |= 0b00100000;
+          break;
+        case 3:
+          gc_ctx->bits[byteidx] |= 0b00010000;
+          break;
+        case 4:
+          gc_ctx->bits[byteidx] |= 0b00001000;
+          break;
+        case 5:
+          gc_ctx->bits[byteidx] |= 0b00000100;
+          break;
+        case 6:
+          gc_ctx->bits[byteidx] |= 0b00000010;
+          break;
+        case 7:
+          gc_ctx->bits[byteidx] |= 0b00000001;
+          break;
+      }
 
       free(gc_ctx->ptrs[i].ptr);
       gc_ctx->ptrs[i].ptr = NULL;

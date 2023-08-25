@@ -35,7 +35,7 @@
 static void test_malloc_then_free()
 {
   printf("test_malloc_then_free:\n");
-  for (int i = 0; i< 10000; i++)
+  for (int i = 0; i < 10000; i++)
   {
     void* ptr = gfc_gc_malloc(1000, 1);
     int rc = gfc_gc_free(ptr);
@@ -49,11 +49,13 @@ static void test_realloc_then_free()
 {
   printf("test_remalloc_then_free:\n");
 
-  int* ptr = gfc_gc_malloc(sizeof(int), 100);
-  ptr = gfc_gc_realloc(ptr, sizeof(int), 1000);
+  for (int i = 0; i < 1000; i++)
+  {
+    void* ptr = gfc_gc_malloc(10, 1);
+    ptr = gfc_gc_realloc(ptr, 10, 100);
 
-  int rc = gfc_gc_free(ptr);
-  assert(rc == GFC_GC_OK);
+    assert(gfc_gc_free(ptr) == GFC_GC_OK);
+  }
 
   printf("  memory allocated now: %lu\n", gfc_gc_total());
 }
