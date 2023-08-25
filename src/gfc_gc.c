@@ -134,7 +134,8 @@ gfc_gc_malloc(size_t size, size_t len)
   }
   size_t total = len * size;
   void* ret = malloc(total);
-  if (1) return ret;
+//  if (1) return ret;
+
   if (ret == NULL)
   {
     fprintf(stderr, "error to allocate memory in file (%s) at line number (%d).\n", __FILE__, __LINE__);
@@ -245,7 +246,7 @@ gfc_gc_realloc(void* ptr, size_t size, size_t len)
 
   size_t total = len * size;
   void* ret = realloc(ptr, total);
-  if (1) return ret;
+//  if (1) return ret;
 
   int i = 0;
   for (i = 0; i < gc_ctx->len; i++)
@@ -287,8 +288,8 @@ gfc_gc_free(void* ptr)
 {
   if (ptr == NULL)
     return GFC_GC_IS_NULL;
-  free(ptr);
-  if (1) return GFC_GC_OK;
+//  free(ptr);
+//  if (1) return GFC_GC_OK;
 
   int i = 0;
   for (i = 0; i < gc_ctx->len; i++)
