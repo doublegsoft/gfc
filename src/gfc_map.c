@@ -45,7 +45,7 @@ typedef         gfc_map_element_t*         gfc_map_element_p;
 /* We need to keep keys and values */
 struct gfc_map_element_s
 {
-  char* key;
+  char key[1024];
   int in_use;
   void* data;
 };
@@ -260,7 +260,7 @@ gfc_map_put(gfc_map_p map, const char* key, user_data value)
 
   /* Set the data */
   map->data[index].data = value;
-  map->data[index].key = (char*)key;
+  strcpy(map->data[index].key, key);
   map->data[index].in_use = 1;
   map->size++;
 
@@ -342,7 +342,7 @@ gfc_map_remove(gfc_map_p map, char* key){
         /* Blank out the fields */
         map->data[curr].in_use = 0;
         map->data[curr].data = NULL;
-        map->data[curr].key = NULL;
+        map->data[curr].key[0] = '\0';
 
         /* Reduce the size */
         map->size--;
