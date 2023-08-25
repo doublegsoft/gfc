@@ -1,7 +1,17 @@
 /*
-** gfc
+**           .d888
+**          d88P"
+**          888
+**  .d88b.  888888 .d8888b
+** d88P"88b 888   d88P"
+** 888  888 888   888
+** Y88b 888 888   Y88b.
+**  "Y88888 888    "Y8888P
+**      888
+** Y8b d88P
+**  "Y88P"
 **
-** Copyright (C) 2019 doubelgsoft.open
+** Copyright (C) 2023 doublegsoft.open
 **
 ** This program is free software: you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -14,7 +24,7 @@
 ** GNU General Public License for more details.
 **
 ** You should have received a copy of the GNU General Public License
-** along with this program.  If not, see <https://www.gnu.org/licenses/>.
+** along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 /*!

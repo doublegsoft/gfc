@@ -50,6 +50,7 @@ add_library(gfc STATIC
   src/gfc_date.c
   src/gfc_btree.c
   src/gfc_mt.c
+  src/gfc_ws.c
   src/gfc_gc.c
 )
 

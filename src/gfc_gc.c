@@ -264,6 +264,7 @@ gfc_gc_realloc(void* ptr, size_t size, size_t len)
 
   // never be here if correct
   assert(1 == 0);
+  return NULL;
 }
 
 
