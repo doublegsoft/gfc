@@ -7,6 +7,7 @@
 int
 main()
 {
+  gfc_gc_init();
   gfc_map_p map = gfc_map_new();
 
   gfc_map_put(map, "hello", "world");

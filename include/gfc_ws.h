@@ -34,6 +34,9 @@ extern "C"
 {
 #endif
 
+#include <stdint.h>
+
+
 #include "gfc_type.h"
 
 #define GFC_WS_OK                         0
@@ -71,14 +74,14 @@ gfc_ws_conn(gfc_ws_p ctx, const char* ip, uint16_t port);
 /*!
 ** sends message to server.
 */
-GFC_API void
-gfc_ws_send(gfc_ws_p ctx);
+GFC_API int
+gfc_ws_send(gfc_ws_p ctx, uint8_t* msg, uint64_t size, int type);
 
 /*!
 ** receives message from server.
 */
-GFC_API void
-gfc_ws_recv(gfc_ws_p ctx);
+GFC_API int
+gfc_ws_recv(gfc_ws_p ctx, char** buff, size_t* buff_size, int* frm_type);
 
 /*!
 ** closes web socket client context.

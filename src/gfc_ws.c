@@ -45,6 +45,7 @@ typedef unsigned long in_addr_t;
 #endif
 
 #include "gfc_ws.h"
+#include "gfc_gc.h"
 
 #define GFC_WS_REQUEST_DUMMY            "GET / HTTP/1.1\r\n"                                      \
                                         "Host: localhost:8080\r\n"                                \
@@ -52,6 +53,35 @@ typedef unsigned long in_addr_t;
                                         "Upgrade: websocket\r\n"                                  \
                                         "Sec-WebSocket-Version: 13\r\n"                           \
                                         "Sec-WebSocket-Key: uaGPoPbZRzHcWDXiNQ5dyg==\r\n\r\n"
+
+static inline int next_byte(gfc_ws_p ctx, int *ret)
+{
+  ssize_t n;
+
+  /* If empty or full. */
+  if (ctx->cur_pos == 0 || ctx->cur_pos == ctx->amt_read)
+  {
+    if ((n = recv(ctx->fd, ctx->frm, sizeof(ctx->frm), 0)) <= 0)
+    {
+      if (ret)
+        *ret = 1;
+      return (-1);
+    }
+
+    ctx->amt_read = (size_t)n;
+    ctx->cur_pos  = 0;
+  }
+  return (ctx->frm[ctx->cur_pos++]);
+}
+
+static int skip_frame(gfc_ws_p ctx, uint64_t frame_size)
+{
+  uint64_t i;
+  for (i = 0; i < frame_size; i++)
+    if (next_byte(ctx, NULL) == -1)
+      return (-1);
+  return (0);
+}
 
 int
 gfc_ws_conn(gfc_ws_p ctx, const char *ip, uint16_t port)
@@ -118,4 +148,184 @@ gfc_ws_conn(gfc_ws_p ctx, const char *ip, uint16_t port)
   ctx->status   = TWS_ST_CONNECTED;
 
   return GFC_WS_OK;
+}
+
+int
+gfc_ws_recv(gfc_ws_p ctx, char** buff, size_t* buff_size, int* frm_type)
+{
+  int ret;
+  char *buf;
+  uint64_t i;
+  int cur_byte;
+  uint8_t opcode;
+  uint64_t frame_length;
+
+  /* Buffer should be valid. */
+  if (!buff || (*buff && !buff_size))
+    return (-1);
+
+  ret = 0;
+  cur_byte = next_byte(ctx, &ret);
+  opcode = (cur_byte & 0xF);
+
+  /* If CLOSE, lets close, abruptly, because why not?. */
+  if (opcode == FRM_CLSE || cur_byte == -1)
+  {
+    gfc_ws_close(ctx);
+    return (-1);
+  }
+
+  frame_length = next_byte(ctx, &ret) & 0x7F;
+
+  /* Read remaining length bytes, if any. */
+  if (frame_length == 126)
+  {
+    frame_length = (((uint64_t)next_byte(ctx, &ret)) << 8) |
+      next_byte(ctx, &ret);
+  }
+
+  else if (frame_length == 127)
+  {
+    frame_length =
+      (((uint64_t)next_byte(ctx, &ret)) << 56) | /* frame[2]. */
+      (((uint64_t)next_byte(ctx, &ret)) << 48) | /* frame[3]. */
+      (((uint64_t)next_byte(ctx, &ret)) << 40) |
+      (((uint64_t)next_byte(ctx, &ret)) << 32) |
+      (((uint64_t)next_byte(ctx, &ret)) << 24) |
+      (((uint64_t)next_byte(ctx, &ret)) << 16) |
+      (((uint64_t)next_byte(ctx, &ret)) <<  8) |
+      (((uint64_t)next_byte(ctx, &ret))); /* frame[9]. */
+  }
+
+  /* Check if any error before proceed. */
+  if (ret)
+    return (ret);
+
+  /*
+   * If frame is something other than CLSE and TXT/BIN (like PONG
+   * or CONT), skip.
+   */
+  if (opcode != FRM_TXT && opcode != FRM_BIN)
+    if (skip_frame(ctx, frame_length) < 0)
+      return (-1);
+
+  /* Allocate memory, if needed. */
+  if (*buff_size < frame_length)
+  {
+    if (*buff == NULL)
+      buf = gfc_gc_malloc(1, frame_length + 1);
+    else
+      buf = gfc_gc_realloc(*buff, 1, frame_length + 1);
+
+    if (!buf)
+      return (-1);
+    *buff = buf;
+    *buff_size = frame_length + 1;
+  }
+  else
+    buf = *buff;
+
+  /* Receive frame. */
+  for (i = 0; i < frame_length; i++, buf++)
+  {
+    cur_byte = next_byte(ctx, &ret);
+    if (cur_byte < 0)
+      return (ret);
+
+    *buf = cur_byte;
+  }
+  *buf = '\0';
+
+  /* Fill other infos. */
+  *frm_type = opcode;
+
+  return (ret);
+}
+
+int gfc_ws_send(gfc_ws_p ctx, uint8_t* msg, uint64_t size, int type)
+{
+  uint8_t frame[10] = {0};
+  uint8_t masks[4];
+  uint64_t length;
+  uint8_t hdr_len;
+  size_t count;
+  uint8_t *tmp;
+  uint8_t *p;
+
+  frame[0]  = FRM_FIN | type;
+  frame[1] |= FRM_MSK;
+  length    = (uint64_t)size;
+
+  /* Split the size between octets. */
+  if (length <= 125)
+  {
+    frame[1] |= length & 0x7F;
+    hdr_len = 2;
+  }
+
+  /* Size between 126 and 65535 bytes. */
+  else if (length >= 126 && length <= 65535)
+  {
+    frame[1] |= 126;
+    frame[2]  = (length >> 8) & 255;
+    frame[3]  = length & 255;
+    hdr_len = 4;
+  }
+
+  /* More than 65535 bytes. */
+  else
+  {
+    frame[1] |= 127;
+    frame[2]  = (uint8_t)((length >> 56) & 255);
+    frame[3]  = (uint8_t)((length >> 48) & 255);
+    frame[4]  = (uint8_t)((length >> 40) & 255);
+    frame[5]  = (uint8_t)((length >> 32) & 255);
+    frame[6]  = (uint8_t)((length >> 24) & 255);
+    frame[7]  = (uint8_t)((length >> 16) & 255);
+    frame[8]  = (uint8_t)((length >> 8) & 255);
+    frame[9]  = (uint8_t)(length & 255);
+    hdr_len = 10;
+  }
+
+  /* Send header. */
+  if (send(ctx->fd, frame, hdr_len, MSG_NOSIGNAL) < 0)
+    return (-1);
+
+  /* Send dummy masks. */
+  masks[0] = masks[1] = masks[2] = masks[3] = 0xAA;
+  if (send(ctx->fd, masks, 4, MSG_NOSIGNAL) < 0)
+    return (-2);
+
+  /* Mask message and send it. */
+  p = gfc_gc_malloc(sizeof(uint8_t), size);
+  if (!p)
+    return (-3);
+
+  memcpy(p, msg, size);
+
+  for (tmp = p, count = 0; count < size; tmp++, count++)
+    *tmp ^= masks[count % 4];
+
+  if (send(ctx->fd, p, size, MSG_NOSIGNAL) < 0)
+  {
+    gfc_gc_free(p);
+    return (-4);
+  }
+  gfc_gc_free(p);
+
+  return GFC_WS_OK;
+}
+
+void gfc_ws_close(gfc_ws_p ctx)
+{
+  if (ctx->status == TWS_ST_DISCONNECTED)
+    return;
+#ifndef _WIN32
+  shutdown(ctx->fd, SHUT_RDWR);
+  close(ctx->fd);
+#else
+  closesocket(ctx->fd);
+  WSACleanup();
+#endif
+  ctx->status = TWS_ST_DISCONNECTED;
 }

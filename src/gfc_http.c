@@ -43,6 +43,8 @@
   #error Platform not supported.
 #endif
 
+#define GFC_FILE_BUFF_SIZE                      4096
+
 int
 gfc_http_upload(const char* hostname,
                 const char* port,

@@ -33,6 +33,7 @@
 
 #include "gfc_type.h"
 #include "gfc_map.h"
+#include "gfc_gc.h"
 
 
 #define INITIAL_SIZE (256)
@@ -63,10 +64,10 @@ struct gfc_map_s
  */
 GFC_API gfc_map_p
 gfc_map_new() {
-  gfc_map_p m = (gfc_map_p) malloc(sizeof(gfc_map_t));
+  gfc_map_p m = (gfc_map_p) gfc_gc_malloc(sizeof(gfc_map_t), 1);
   if(!m) goto err;
 
-  m->data = (gfc_map_element_p) calloc(INITIAL_SIZE, sizeof(gfc_map_element_t));
+  m->data = (gfc_map_element_p) gfc_gc_malloc(sizeof(gfc_map_element_t), INITIAL_SIZE);
   if(!m->data) goto err;
 
   m->table_size = INITIAL_SIZE;
@@ -361,8 +362,8 @@ gfc_map_remove(gfc_map_p map, char* key){
 GFC_API void
 gfc_map_free(gfc_map_p map)
 {
-  free(map->data);
-  free(map);
+  gfc_gc_free(map->data);
+  gfc_gc_free(map);
 }
 
 /*!
