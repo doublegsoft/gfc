@@ -129,6 +129,8 @@ gfc_string_free(gfc_string_p str)
 
   rc = gfc_gc_free(str);
   assert(GFC_GC_OK == rc);
+
+  str = NULL;
 }
 
 GFC_API void
