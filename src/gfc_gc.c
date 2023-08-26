@@ -306,28 +306,28 @@ gfc_gc_free(void* ptr)
 
       switch (bitidx) {
         case 0:
-          gc_ctx->bits[byteidx] |= 0b10000000;
+          gc_ctx->bits[byteidx] &= 0b01111111;
           break;
         case 1:
-          gc_ctx->bits[byteidx] |= 0b01000000;
+          gc_ctx->bits[byteidx] &= 0b10111111;
           break;
         case 2:
-          gc_ctx->bits[byteidx] |= 0b00100000;
+          gc_ctx->bits[byteidx] &= 0b11011111;
           break;
         case 3:
-          gc_ctx->bits[byteidx] |= 0b00010000;
+          gc_ctx->bits[byteidx] &= 0b11101111;
           break;
         case 4:
-          gc_ctx->bits[byteidx] |= 0b00001000;
+          gc_ctx->bits[byteidx] &= 0b11110111;
           break;
         case 5:
-          gc_ctx->bits[byteidx] |= 0b00000100;
+          gc_ctx->bits[byteidx] &= 0b11111011;
           break;
         case 6:
-          gc_ctx->bits[byteidx] |= 0b00000010;
+          gc_ctx->bits[byteidx] &= 0b01111101;
           break;
         case 7:
-          gc_ctx->bits[byteidx] |= 0b00000001;
+          gc_ctx->bits[byteidx] &= 0b11111110;
           break;
       }
 
