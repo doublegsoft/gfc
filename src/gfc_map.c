@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
+#include <assert.h>
 
 #include "gfc_type.h"
 #include "gfc_map.h"
@@ -362,8 +363,12 @@ gfc_map_remove(gfc_map_p map, char* key){
 GFC_API void
 gfc_map_free(gfc_map_p map)
 {
-  gfc_gc_free(map->data);
-  gfc_gc_free(map);
+
+  int rc = gfc_gc_free(map->data);
+  assert(GFC_GC_OK == rc);
+  rc = gfc_gc_free(map);
+  assert(GFC_GC_OK == rc);
+  map = NULL;
 }
 
 /*!
