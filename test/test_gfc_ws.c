@@ -112,12 +112,12 @@ gfc_ws_test_send(void* data)
             "\"userId\":\"%s\","
             "\"userType\":\"TEST\","
             "\"payload\":{"
-            "    \"receiverId\":\"%s\","
-            "    \"receiverType\":\"TEST\","
-            "    \"receiverAlias\":\"%s号选手\","
-            "    \"messageType\": \"TEXT\","
-            "    \"messageContent\": \"你好, %s号\""
-            "  }"
+            "\"receiverId\":\"%s\","
+            "\"receiverType\":\"TEST\","
+            "\"receiverAlias\":\"%s号选手\","
+            "\"messageType\": \"TEXT\","
+            "\"messageContent\": \"你好, %s号\""
+            "}"
             "}",
             sender,
             receiver,
@@ -157,7 +157,7 @@ int main(int argc, char* argv[])
           "\"userId\":\"%s\","
           "\"userType\":\"TEST\","
           "\"payload\":{"
-          "  }"
+          "}"
           "}",
           sender);
   assert(GFC_WS_OK == gfc_ws_send(&ctx, (uint8_t *) msg, strlen(msg), FRM_TXT));

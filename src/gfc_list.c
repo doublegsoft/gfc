@@ -181,7 +181,9 @@ GFC_API void
 gfc_list_free(gfc_list_p list)
 {
 //  gfc_list_clear(list);
-  assert(GFC_GC_OK == gfc_gc_free(list->pointers));
-  assert(GFC_GC_OK == gfc_gc_free(list));
+  int rc = gfc_gc_free(list->pointers);
+  assert(GFC_GC_OK == rc);
+  rc = gfc_gc_free(list);
+  assert(GFC_GC_OK == rc);
   list = NULL;
 }

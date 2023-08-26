@@ -27,6 +27,7 @@
 ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include <stdio.h>
+#include <assert.h>
 
 #include "gfc.h"
 
@@ -80,14 +81,28 @@ main()
 
   gfc_list_free(list);
 
+  assert(gfc_gc_total() == 0);
+
+  int MAX = 30000;
   list = gfc_list_new();
-  for (i = 0; i < 30000; i++)
+  for (i = 0; i < MAX; i++)
   {
     int* a = (int*)gfc_gc_malloc(sizeof(int), 1);
 //    int* a = (int*)malloc(sizeof(int));
     *a = i;
     gfc_list_append(list, a);
   }
+
+  printf("%lu blocks used memory: %lu\n", gfc_gc_length(), gfc_gc_total());
+
+  for (i = 0; i < MAX; i++)
+    gfc_gc_free(gfc_list_get(list, i));
+
+  gfc_list_free(list);
+
+  printf("used memory after free: %lu\n", gfc_gc_total());
+  assert(gfc_gc_total() == 0);
+
 
 //  gfc_list_sort(list, descend);
 //
