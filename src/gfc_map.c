@@ -387,4 +387,5 @@ void
 gfc_map_deep_free(gfc_map_p map)
 {
   gfc_map_iterate(map, gfc_map_item_free);
+  gfc_map_free(map);
 }
