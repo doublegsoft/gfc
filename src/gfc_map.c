@@ -366,6 +366,7 @@ gfc_map_free(gfc_map_p map)
 
   int rc = gfc_gc_free(map->data);
   assert(GFC_GC_OK == rc);
+
   rc = gfc_gc_free(map);
   assert(GFC_GC_OK == rc);
   map = NULL;

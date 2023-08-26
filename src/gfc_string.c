@@ -124,8 +124,11 @@ gfc_string_length(gfc_string_p str)
 GFC_API void
 gfc_string_free(gfc_string_p str)
 {
-  assert(GFC_GC_OK == gfc_gc_free(str->buffer));
-  assert(GFC_GC_OK == gfc_gc_free(str));
+  int rc = gfc_gc_free(str->buffer);
+  assert(GFC_GC_OK == rc);
+
+  rc = gfc_gc_free(str);
+  assert(GFC_GC_OK == rc);
 }
 
 GFC_API void
