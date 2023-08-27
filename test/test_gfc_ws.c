@@ -145,6 +145,10 @@ int main(int argc, char* argv[])
     strcpy(receiver, "2");
   if (strcmp(sender, "2") == 0)
     strcpy(receiver, "1");
+  if (strcmp(sender, "3") == 0)
+      strcpy(receiver, "4");
+  if (strcmp(sender, "4") == 0)
+      strcpy(receiver, "3");
 
   gfc_ws_t ctx;
 

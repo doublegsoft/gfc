@@ -47,7 +47,9 @@ extern "C"
 #define FRM_FIN                           128
 #define FRM_MSK                           128
 
-#define MESSAGE_LENGTH                    1024
+#ifndef MESSAGE_LENGTH
+#define MESSAGE_LENGTH                    2048
+#endif
 
 /* Client status. */
 #define TWS_ST_DISCONNECTED               0
