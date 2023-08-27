@@ -84,6 +84,7 @@ add_executable(test_gfc_lru
 
 add_executable(test_gfc_map
   src/gfc_map.c
+  src/gfc_string.c
   src/gfc_gc.c
   test/test_gfc_map.c
 )
