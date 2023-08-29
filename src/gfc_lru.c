@@ -90,9 +90,10 @@ gfc_lru_item_remove(gfc_lru_p lru, gfc_lru_item_p prev, gfc_lru_item_p item, uin
 
   // free memory and update the free memory counter
   lru->free_memory += item->value_length;
-//  free(item->value);
-  int rc = gfc_gc_free(item->value);
-  assert(GFC_GC_OK == rc);
+  free(item->key);
+  free(item->value);
+//  int rc = gfc_gc_free(item->value);
+//  assert(GFC_GC_OK == rc);
 
   // push the item to the free items queue
   memset(item, 0, sizeof(gfc_lru_item_t));
@@ -254,7 +255,7 @@ gfc_lru_set(gfc_lru_p lru, void *key, uint32_t key_length, void *value, uint32_t
   {
     // update the value and value_lengths
     required = value_length - item->value_length;
-//    free(item->value);
+    free(item->value);
     item->value = value;
     item->value_length = value_length;
 
