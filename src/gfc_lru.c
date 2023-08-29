@@ -92,13 +92,13 @@ gfc_lru_item_remove(gfc_lru_p lru, gfc_lru_item_p prev, gfc_lru_item_p item, uin
   lru->free_memory += item->value_length;
   free(item->key);
   free(item->value);
-//  int rc = gfc_gc_free(item->value);
-//  assert(GFC_GC_OK == rc);
+  int rc = gfc_gc_free(item);
+  assert(GFC_GC_OK == rc);
 
   // push the item to the free items queue
-  memset(item, 0, sizeof(gfc_lru_item_t));
-  item->next = lru->free_items;
-  lru->free_items = item;
+//  memset(item, 0, sizeof(gfc_lru_item_t));
+//  item->next = lru->free_items;
+//  lru->free_items = item;
 }
 
 // remove the least recently used item
@@ -136,12 +136,12 @@ static gfc_lru_item_p
 gfc_lru_item_pop(gfc_lru_p lru) {
   gfc_lru_item_p item = NULL;
 
-  if(lru->free_items)
-  {
-    item = lru->free_items;
-    lru->free_items = item->next;
-  }
-  else
+//  if(lru->free_items)
+//  {
+//    item = lru->free_items;
+//    lru->free_items = item->next;
+//  }
+//  else
     item = (gfc_lru_item_p) gfc_gc_malloc(sizeof(gfc_lru_item_t), 1);
   return item;
 }
