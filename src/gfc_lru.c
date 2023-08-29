@@ -251,6 +251,7 @@ gfc_lru_set(gfc_lru_p lru, void *key, uint32_t key_length, void *value, uint32_t
     item = (gfc_lru_item_p) item->next;
   }
 
+
   if(item)
   {
     // update the value and value_lengths
@@ -259,7 +260,6 @@ gfc_lru_set(gfc_lru_p lru, void *key, uint32_t key_length, void *value, uint32_t
     free(item->key);
     item->value = value;
     item->value_length = value_length;
-
   }
   else
   {
