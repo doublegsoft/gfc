@@ -138,9 +138,9 @@ gfc_lru_item_pop(gfc_lru_p lru) {
 
   if(lru->free_items)
   {
-//    item = lru->free_items;
-//    lru->free_items = item->next;
-    item = (gfc_lru_item_p) gfc_gc_malloc(sizeof(gfc_lru_item_t), 1);
+    item = lru->free_items;
+    lru->free_items = item->next;
+//    item = (gfc_lru_item_p) gfc_gc_malloc(sizeof(gfc_lru_item_t), 1);
   }
   else
     item = (gfc_lru_item_p) gfc_gc_malloc(sizeof(gfc_lru_item_t), 1);
