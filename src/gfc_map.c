@@ -390,6 +390,7 @@ static int
 gfc_map_item_free(const char* key, user_data* data)
 {
   if (*data != NULL) free(*data);
+  *data = NULL;
   return 0;
 }
 
