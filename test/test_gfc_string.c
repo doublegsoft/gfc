@@ -55,7 +55,7 @@ main()
     gfc_string_utf8(gbk, utf8, 1024);
 
     FILE* f = fopen("./test_gfc_string_output", "a+");
-    fprintf(f, utf8);
+    fprintf(f, "%s", utf8);
     fprintf(f, "\n");
     fclose(f);
 

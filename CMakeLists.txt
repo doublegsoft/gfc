@@ -60,6 +60,11 @@ add_executable(test_gfc_string
   test/test_gfc_string.c
 )
 
+add_executable(test_gfc_date
+  src/gfc_date.c
+  test/test_gfc_date.c
+)
+
 add_executable(test_gfc_log
   src/gfc_log.c
   test/test_gfc_log.c

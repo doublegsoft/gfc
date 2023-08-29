@@ -26,18 +26,68 @@
 ** You should have received a copy of the GNU General Public License
 ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include <time.h>
+#include <stdio.h>
 
 #include "gfc_date.h"
+#include "gfc_type.h"
+
+void
+gfc_date_stringify(char* buff, struct tm* timeinfo, gfc_date_field_e field)
+{
+  int year = timeinfo->tm_year + 1900;
+  int month = timeinfo->tm_mon + 1;
+  int day = timeinfo->tm_mday;
+  int hour = timeinfo->tm_hour;
+  int min = timeinfo->tm_min;
+  int sec = timeinfo->tm_sec;
+  switch (field)
+  {
+    case YEAR:
+      sprintf(buff, "%d", year);
+      break;
+    case MONTH:
+      sprintf(buff, "%d-%02d", year, month);
+      break;
+    case DAY:
+      sprintf(buff, "%d-%02d-%02d", year, month, day);
+      break;
+    case HOUR:
+      sprintf(buff, "%d-%02d-%02d %02d", year, month, day, hour);
+      break;
+    case MINUTE:
+      sprintf(buff, "%d-%02d-%02d %02d:%02d", year, month, day, hour, min);
+      break;
+    case SECOND:
+      sprintf(buff, "%d-%02d-%02d %02d:%02d:%02d", year, month, day, hour, min, sec);
+      break;
+    default:
+      break;
+  }
+}
 
 int
 gfc_date_now(char* buff)
 {
   time_t rawtime;
-  struct tm * timeinfo;
+  struct tm* timeinfo;
 
   time (&rawtime);
   timeinfo = localtime (&rawtime);
 
-  return 0;
+  gfc_date_stringify(buff, timeinfo, SECOND);
+
+  return GFC_SUCCESS;
+}
+
+int
+gfc_date_add(char* buff, time_t raw, int secs)
+{
+  raw += secs;
+  struct tm* timeinfo;
+  timeinfo = localtime (&raw);
+
+  gfc_date_stringify(buff, timeinfo, SECOND);
+  return GFC_SUCCESS;
 }
 

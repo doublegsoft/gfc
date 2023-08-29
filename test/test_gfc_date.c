@@ -11,7 +11,7 @@
 ** Y8b d88P
 **  "Y88P"
 **
-** Copyright (C) 2022 doublegsoft.open
+** Copyright (C) 2023 doublegsoft.open
 **
 ** This program is free software: you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -26,40 +26,23 @@
 ** You should have received a copy of the GNU General Public License
 ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include <stdio.h>
 
-#ifndef __GFC_DATE_H__
-#define __GFC_DATE_H__
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-typedef enum gfc_date_field_e
-{
-  YEAR,
-  MONTH,
-  DAY,
-  HOUR,
-  MINUTE,
-  SECOND
-}
-gfc_date_field_e;
-
-#include <time.h>
+#include "gfc_date.h"
+#include "gfc_type.h"
 
 int
-gfc_date_now(char* buff);
+main()
+{
+  time_t raw;
+  time(&raw);
 
-int
-gfc_date_add(char* buff, time_t raw, int secs);
+  char buff[1024] = {'\0'};
 
-void
-gfc_date_stringify(char* buff, struct tm* timeinfo, gfc_date_field_e field);
+  gfc_date_add(buff, raw, -60 * 60);
+  printf("%s\n", buff);
 
-#ifdef __cplusplus
+  gfc_date_now(buff);
+  printf("%s\n", buff);
+  return GFC_SUCCESS;
 }
-#endif
-
-
-#endif /* __GFC_DATE_H__ */
