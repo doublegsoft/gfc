@@ -175,6 +175,7 @@ gfc_lru_new(uint64_t cache_size, uint32_t average_length) {
   lru->free_memory          = cache_size;
   lru->total_memory         = cache_size;
   lru->seed                 = time(NULL);
+  lru->free_items           = NULL;
 
   // size the hash table to a guestimate of the number of slots required (assuming a perfect hash)
   lru->items = (gfc_lru_item_p*) gfc_gc_malloc(sizeof(gfc_lru_item_p), lru->hash_table_size);
