@@ -109,3 +109,7 @@ add_executable(test_gfc_ws
   src/gfc_gc.c
   test/test_gfc_ws.c
 )
+
+target_link_libraries(test_gfc_ws PRIVATE
+  pthread
+)
