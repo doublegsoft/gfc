@@ -96,7 +96,7 @@ gfc_lru_item_remove(gfc_lru_p lru, gfc_lru_item_p prev, gfc_lru_item_p item, uin
   assert(GFC_GC_OK == rc);
 
   // push the item to the free items queue
-  memset(item, 0, sizeof(gfc_lru_item_t));
+//  memset(item, 0, sizeof(gfc_lru_item_t));
 //  item->next = lru->free_items;
 //  lru->free_items = item;
 }
