@@ -81,6 +81,10 @@ add_executable(test_gfc_mt
   test/test_gfc_mt.c
 )
 
+target_link_libraries(test_gfc_mt PRIVATE
+  pthread
+)
+
 add_executable(test_gfc_lru
   src/gfc_lru.c
   src/gfc_gc.c
