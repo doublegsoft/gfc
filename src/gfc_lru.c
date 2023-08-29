@@ -91,7 +91,8 @@ gfc_lru_item_remove(gfc_lru_p lru, gfc_lru_item_p prev, gfc_lru_item_p item, uin
   // free memory and update the free memory counter
   lru->free_memory += item->value_length;
 //  free(item->value);
-  assert(GFC_GC_OK == gfc_gc_free(item->key));
+  int rc = gfc_gc_free(item->key);
+  assert(GFC_GC_OK == rc);
 
   // push the item to the free items queue
   memset(item, 0, sizeof(gfc_lru_item_t));
@@ -162,6 +163,7 @@ GFC_API gfc_lru_p
 gfc_lru_new(uint64_t cache_size, uint32_t average_length) {
   // create the cache
   gfc_lru_p lru = (gfc_lru_p) gfc_gc_malloc(sizeof(gfc_lru_t), 1);
+  int rc;
   if(!lru) {
     perror("LRU Cache unable to create cache object");
     return NULL;
@@ -177,7 +179,8 @@ gfc_lru_new(uint64_t cache_size, uint32_t average_length) {
   if(!lru->items)
   {
     perror("LRU Cache unable to create cache hash table");
-    assert(GFC_GC_OK == gfc_gc_free(lru));
+    rc = gfc_gc_free(lru);
+    assert(GFC_GC_OK == rc);
     return NULL;
   }
 
@@ -185,8 +188,10 @@ gfc_lru_new(uint64_t cache_size, uint32_t average_length) {
   lru->mutex = (pthread_mutex_t *) gfc_gc_malloc(sizeof(pthread_mutex_t), 1);
   if(pthread_mutex_init(lru->mutex, NULL)) {
     perror("LRU Cache unable to initialise mutex");
-    assert(GFC_GC_OK == gfc_gc_free(lru->items));
-    assert(GFC_GC_OK == gfc_gc_free(lru));
+    int rc = gfc_gc_free(lru->items);
+    assert(GFC_GC_OK == rc);
+    rc = gfc_gc_free(lru);
+    assert(GFC_GC_OK == rc);
     return NULL;
   }
   return lru;
@@ -197,6 +202,7 @@ GFC_API gfc_lru_error
 gfc_lru_free(gfc_lru_p lru) {
   // free each of the cached items, and the hash table
   gfc_lru_item_p item = NULL, next = NULL;
+  int rc;
   uint32_t i = 0;
   if(lru->items) {
     for(; i < lru->hash_table_size; i++) {
@@ -204,11 +210,13 @@ gfc_lru_free(gfc_lru_p lru) {
       while(item)
       {
         next = (gfc_lru_item_p) item->next;
-        assert(GFC_GC_OK == gfc_gc_free(item));
+        rc = gfc_gc_free(item);
+        assert(GFC_GC_OK == rc);
         item = next;
       }
     }
-    assert(GFC_GC_OK == gfc_gc_free(lru->items));
+    rc = gfc_gc_free(lru->items);
+    assert(GFC_GC_OK == rc);
   }
 
   // free the cache
@@ -220,7 +228,8 @@ gfc_lru_free(gfc_lru_p lru) {
       return GFC_LRU_PTHREAD_ERROR;
     }
   }
-  assert(GFC_GC_OK == gfc_gc_free(lru));
+  rc = gfc_gc_free(lru);
+  assert(GFC_GC_OK == rc);
 
   return GFC_LRU_NO_ERROR;
 }
