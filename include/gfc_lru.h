@@ -73,7 +73,7 @@ struct gfc_lru_s
   uint64_t          average_item_length;
   uint32_t          hash_table_size;
   time_t            seed;
-//  gfc_lru_item_p    free_items;
+  gfc_lru_item_p    free_items;
   pthread_mutex_t*  mutex;
 };
 
