@@ -48,7 +48,7 @@ struct gfc_map_element_s
 {
   char key[1024];
   int in_use;
-  void* data;
+  user_data data;
 };
 
 /* A hashmap has some maximum size and current size,
@@ -305,7 +305,7 @@ gfc_map_get(gfc_map_p map, const char* key, user_data* arg)
  * argument and the hashmap element is the second.
  */
 int
-gfc_map_iterate(gfc_map_p map, int (*resolve)(const char*, user_data)) {
+gfc_map_iterate(gfc_map_p map, int (*resolve)(const char*, user_data*)) {
   int i;
 
   if (gfc_map_size(map) <= 0)
@@ -313,16 +313,17 @@ gfc_map_iterate(gfc_map_p map, int (*resolve)(const char*, user_data)) {
 
   /* Linear probing */
   for(i = 0; i< map->table_size; i++)
-    if(map->data[i].in_use != 0) {
-      const char* key = map->data[i].key;
-      void* data = (void*) (map->data[i].data);
-      int status = resolve(key, data);
-      map->data[i].data = NULL;
-      map->data[i].in_use = 0;
-      if (status != GFC_ERROR_MAP_OK) {
-        return status;
-      }
+  {
+//    if(map->data[i].in_use != 0) {
+    const char* key = map->data[i].key;
+    user_data data = (user_data) (map->data[i].data);
+    int status = resolve(key, &data);
+    map->data[i].data = NULL;
+    map->data[i].in_use = 0;
+    if (status != GFC_ERROR_MAP_OK) {
+      return status;
     }
+  }
 
   return GFC_ERROR_MAP_OK;
 }
@@ -386,9 +387,9 @@ gfc_map_size(gfc_map_p map)
 }
 
 static int
-gfc_map_item_free(const char* key, user_data data)
+gfc_map_item_free(const char* key, user_data* data)
 {
-  if (data != NULL) free(data);
+  if (*data != NULL) free(*data);
   return 0;
 }
 
