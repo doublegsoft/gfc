@@ -71,6 +71,10 @@ gfc_map_new() {
   m->data = (gfc_map_element_p) gfc_gc_malloc(sizeof(gfc_map_element_t), INITIAL_SIZE);
   if(!m->data) goto err;
 
+  // NOTE: INIT VERY IMPORTANT
+  for (int i = 0; i < INITIAL_SIZE; i++)
+    m->data[i] = NULL;
+
   m->table_size = INITIAL_SIZE;
   m->size = 0;
 
