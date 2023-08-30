@@ -312,7 +312,7 @@ gfc_map_iterate(gfc_map_p map, int (*resolve)(const char*, user_data*)) {
     return GFC_ERROR_MAP_MISSING;
 
   /* Linear probing */
-  for(i = 0; i< map->table_size; i++)
+  for(i = 0; i < map->table_size; i++)
   {
 //    if(map->data[i].in_use != 0) {
     const char* key = map->data[i].key;
