@@ -73,7 +73,7 @@ gfc_map_new() {
 
   // NOTE: INIT VERY IMPORTANT
   for (int i = 0; i < INITIAL_SIZE; i++)
-    m->data[i] = NULL;
+    m->data[i].data = NULL;
 
   m->table_size = INITIAL_SIZE;
   m->size = 0;
