@@ -123,7 +123,7 @@ GFC_API void
 gfc_map_clear(gfc_map_p map);
 
 int
-gfc_map_iterate(gfc_map_p map, int (*resolve)(const char*, user_data*));
+gfc_map_iterate(gfc_map_p map, int (*resolve)(const char*, user_data));
 
 /*!
 ** @brief

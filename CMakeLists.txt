@@ -104,6 +104,12 @@ add_executable(test_gfc_list
   test/test_gfc_list.c
 )
 
+add_executable(test_gfc_btree
+  src/gfc_btree.c
+  src/gfc_gc.c
+  test/test_gfc_btree.c
+)
+
 add_executable(test_gfc_ws
   src/gfc_ws.c
   src/gfc_gc.c

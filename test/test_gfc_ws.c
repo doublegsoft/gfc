@@ -152,8 +152,8 @@ int main(int argc, char* argv[])
 
   gfc_ws_t ctx;
 
-//  assert(GFC_WS_OK == gfc_ws_conn(&ctx, "139.186.131.138", 5678));
-  assert(GFC_WS_OK == gfc_ws_conn(&ctx, "127.0.0.1", 9999));
+  assert(GFC_WS_OK == gfc_ws_conn(&ctx, "139.186.131.138", 5678));
+//  assert(GFC_WS_OK == gfc_ws_conn(&ctx, "127.0.0.1", 9999));
 
   char msg[4096] = {'\0'};
   sprintf(msg,

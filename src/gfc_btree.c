@@ -34,1054 +34,225 @@
 #include <assert.h>
 
 #include "gfc_btree.h"
+#include "gfc_gc.h"
 
-static void *(*_malloc)(size_t) = NULL;
-static void (*_free)(void *) = NULL;
-
-// DEPRECATED: use `btree_new_with_allocator`
-void btree_set_allocator(void *(malloc)(size_t), void (*free)(void*)) {
-    _malloc = malloc;
-    _free = free;
-}
-
-enum delact {
-    DELKEY, POPFRONT, POPBACK, POPMAX,
-};
-
-static size_t align_size(size_t size) {
-    if (size&(sizeof(uintptr_t)-1)) {
-        size += sizeof(uintptr_t)-(size&(sizeof(uintptr_t)-1));
-    }
-    return size;
-}
+typedef struct gfc_btree_node_s*   gfc_btree_node_p;
 
 typedef struct gfc_btree_node_s {
-  atomic_int rc;
 
-  bool leaf;
+  /*!
+  ** the user data
+  */
+  user_data                 data;
 
-  size_t num_items:16;
+  /*!
+  ** the left child
+  */
+  gfc_btree_node_p          left;
 
-  char *items;
+  /*!
+  ** the right child
+  */
+  gfc_btree_node_p          right;
 
-  struct gfc_btree_node_s *children[];
+  /*!
+  **
+  */
+  int                       height;
 }
 gfc_btree_node_t;
 
 typedef struct gfc_btree_s {
-  void *(*malloc)(size_t);
-  void *(*realloc)(void *, size_t);
-  void (*free)(void *);
-  int (*compare)(const void *a, const void *b, void *udata);
-  bool (*item_clone)(const void *item, void *into, void *udata);
-  void (*item_free)(const void *item, void *udata);
+
+  int (*compare)(const user_data a, const user_data b);
 
   /*!
   ** the user data of node
   */
-  void* udata;          // user data
+  void* udata;
+
+  /*!
+  ** the size of user element.
+  */
+  size_t el_size;
 
   /*!
   ** the root node.
   */
   gfc_btree_node_t*     root;
+
+  /*!
+  **
+  */
+  int                   in_order;
+
   size_t count;         // number of items in tree
   size_t height;        // height of tree from root to leaf
   size_t max_items;     // max items allowed per node before needing split
   size_t min_items;     // min items allowed per node before needing join
-  size_t elsize;        // size of user item
+
+
   bool oom;             // last write operation failed due to no memory
   size_t spare_elsize;  // size of each spare element. This is aligned
   char spare_data[];    // spare element spaces for various operations
 }
 gfc_btree_t;
 
-static void *spare_at(struct gfc_btree_s *btree, size_t index) {
-  return btree->spare_data+btree->spare_elsize*index;
-}
-
-#define NUM_SPARES       4
-#define SPARE_RETURN     spare_at((void*)btree, 0) // returned values
-#define SPARE_NODE_COPY  spare_at((void*)btree, 1) // item_clone in node_copy
-#define SPARE_POP        spare_at((void*)btree, 2) // btree_delete pop
-#define SPARE_ITEM_CLONE spare_at((void*)btree, 3) // cloned inputs 
-
-static void *get_item_at(struct gfc_btree_s *btree, struct gfc_btree_node_s *node, size_t index) {
-    return node->items+btree->elsize*index;
-}
-
-static void set_item_at(struct gfc_btree_s *btree, struct gfc_btree_node_s *node, size_t index, 
-    const void *item) 
+/*!
+**
+*/
+static gfc_btree_node_p
+gfc_btree_node_new(user_data data)
 {
-    void *slot = get_item_at(btree, node, index);
-    memcpy(slot, item, btree->elsize);
+  gfc_btree_node_p ret = (gfc_btree_node_p)gfc_gc_malloc(sizeof(gfc_btree_node_t), 1);
+  ret->left = NULL;
+  ret->right = NULL;
+  ret->data = data;
+  ret->height = 1; // New node is initially added as a leaf
+  return ret;
 }
 
-static void swap_item_at(struct gfc_btree_s *btree, struct gfc_btree_node_s *node, size_t index, 
-    const void *item, void *into)
-{ 
-    void *ptr = get_item_at(btree, node, index);
-    memcpy(into, ptr, btree->elsize);
-    memcpy(ptr, item, btree->elsize);
-}
-
-static void copy_item_into(struct gfc_btree_s *btree, struct gfc_btree_node_s *node, size_t index, 
-    void *into)
-{ 
-    memcpy(into, get_item_at(btree, node, index), btree->elsize);
-}
-
-static void node_shift_right(struct gfc_btree_s *btree, struct gfc_btree_node_s *node,
-    size_t index)
+int gfc_btree_height(gfc_btree_node_p node)
 {
-    size_t num_items_to_shift = node->num_items - index;
-    memmove(node->items+btree->elsize*(index+1), 
-            node->items+btree->elsize*index,
-            num_items_to_shift*btree->elsize);
-    if (!node->leaf) {
-        memmove(&node->children[index+1],
-                &node->children[index],
-                (num_items_to_shift+1)*sizeof(struct gfc_btree_node_s*));
-    }
-    node->num_items++;
+  if (node == NULL)
+    return 0;
+  return node->height;
 }
 
-static void node_shift_left(struct gfc_btree_s *btree, struct gfc_btree_node_s *node,
-    size_t index, bool for_merge) 
+// Utility function to get the maximum of two integers
+int gfc_btree_max(int a, int b) {
+  return (a > b) ? a : b;
+}
+
+/*!
+** get the balance factor of a node
+*/
+static int
+gfc_btree_balance(gfc_btree_node_p node) {
+  if (node == NULL)
+    return 0;
+  return gfc_btree_height(node->left) - gfc_btree_height(node->right);
+}
+
+/*!
+** rotate right to fix imbalance
+*/
+static gfc_btree_node_p
+gfc_btree_right_rotate(gfc_btree_node_p y) {
+  gfc_btree_node_p x = y->left;
+  gfc_btree_node_p T2 = x->right;
+
+  x->right = y;
+  y->left = T2;
+
+  // Update heights
+  y->height = gfc_btree_max(gfc_btree_height(y->left), gfc_btree_height(y->right)) + 1;
+  x->height = gfc_btree_max(gfc_btree_height(x->left), gfc_btree_height(x->right)) + 1;
+
+  return x;
+}
+
+/*!
+** rotate left to fix imbalance
+*/
+static gfc_btree_node_p
+gfc_btree_left_rotate(gfc_btree_node_p x) {
+  gfc_btree_node_p y = x->right;
+  gfc_btree_node_p T2 = y->left;
+
+  y->left = x;
+  x->right = T2;
+
+  // Update heights
+  x->height = gfc_btree_max(gfc_btree_height(x->left), gfc_btree_height(x->right)) + 1;
+  y->height = gfc_btree_max(gfc_btree_height(y->left), gfc_btree_height(y->right)) + 1;
+
+  return y;
+}
+
+gfc_btree_p
+gfc_btree_new(int (*compare)(const user_data a, const user_data b))
 {
-    size_t num_items_to_shift = node->num_items - index - 1;
-    memmove(node->items+btree->elsize*index, 
-            node->items+btree->elsize*(index+1),
-            num_items_to_shift*btree->elsize);
-    if (!node->leaf) {
-        if (for_merge) {
-            index++;
-        }
-        memmove(&node->children[index],
-                &node->children[index+1],
-                (num_items_to_shift+1)*sizeof(struct gfc_btree_node_s*));
-    }
-    node->num_items--;
+  size_t size = sizeof(struct gfc_btree_s);
+  gfc_btree_p ret = gfc_gc_malloc(sizeof(gfc_btree_t), 1);
+  memset(ret, 0, size);
+  ret->compare = compare;
+  return ret;
 }
 
-static void copy_item(struct gfc_btree_s *btree, struct gfc_btree_node_s *node_a, size_t index_a,
-    struct gfc_btree_node_s *node_b, size_t index_b) 
+static gfc_btree_node_p
+gfc_btree_insert(gfc_btree_node_p node, user_data data, int (*compare)(const user_data a, const user_data b))
 {
-    memcpy(get_item_at(btree, node_a, index_a), 
-           get_item_at(btree, node_b, index_b), 
-           btree->elsize);
-}
+  if (node == NULL)
+    node = gfc_btree_node_new(data);
 
-static void node_join(struct gfc_btree_s *btree, struct gfc_btree_node_s *left,
-    struct gfc_btree_node_s *right)
-{
-    memcpy(left->items+btree->elsize*left->num_items, right->items,
-           right->num_items*btree->elsize);
-    if (!left->leaf) {
-        memcpy(&left->children[left->num_items],
-               &right->children[0],
-               (right->num_items+1)*sizeof(struct gfc_btree_node_s*));
-    }
-    left->num_items += right->num_items;
-}
-
-static int btcompare(const struct gfc_btree_s *btree, const void *a, const void *b) {
-    return btree->compare(a, b, btree->udata);
-}
-
-static size_t node_bsearch(const struct gfc_btree_s *btree, struct gfc_btree_node_s *node,
-    const void *key, bool *found) 
-{
-    size_t i = 0;
-    size_t n = node->num_items;
-    while ( i < n ) {
-        size_t j = (i + n) >> 1;
-        void *item = get_item_at((void*)btree, node, j);
-        int cmp = btcompare(btree, key, item);
-        if (cmp == 0) {
-            *found = true;
-            return j;
-        } else if (cmp < 0) {
-            n = j;
-        } else {
-            i = j+1;
-        }
-    }
-    *found = false;
-    return i;
-}
-
-static int node_bsearch_hint(const struct gfc_btree_s *btree, struct gfc_btree_node_s *node, 
-    const void *key, bool *found, uint64_t *hint, int depth) 
-{
-    int low = 0;
-    int high = node->num_items-1;
-    if (hint && depth < 8) {
-        size_t index = (size_t)((uint8_t*)hint)[depth];
-        if (index > 0) {
-            if (index > (size_t)(node->num_items-1)) {
-                index = node->num_items-1;
-            }
-            void *item = get_item_at((void*)btree, node, (size_t)index);
-            int cmp = btcompare(btree, key, item);
-            if (cmp == 0) {
-                *found = true;
-                return index;
-            }
-            if (cmp > 0) {
-                low = index+1;
-            } else {
-                high = index-1;
-            }
-        }
-    }
-    int index;
-    while ( low <= high ) {
-        int mid = (low + high) / 2;
-        void *item = get_item_at((void*)btree, node, (size_t)mid);
-        int cmp = btcompare(btree, key, item);
-        if (cmp == 0) {
-            *found = true;
-            index = mid;
-            goto done;
-        }
-        if (cmp < 0) {
-            high = mid - 1;
-        } else {
-            low = mid + 1;
-        }
-    }
-    *found = false;
-    index = low;
-done:
-    if (hint && depth < 8) {
-        ((uint8_t*)hint)[depth] = (uint8_t)index;
-    }
-    return index;
-}
-
-static size_t btree_memsize(size_t elsize, size_t *spare_elsize) {
-    size_t size = align_size(sizeof(struct gfc_btree_s));
-    size_t elsize_aligned = align_size(elsize);
-    size += elsize_aligned * NUM_SPARES;
-    if (spare_elsize) *spare_elsize = elsize_aligned;
-    return size;
-}
-
-struct gfc_btree_s *btree_new_with_allocator(
-    void *(*malloc_)(size_t), 
-    void *(*realloc_)(void *, size_t), 
-    void (*free_)(void*),
-    size_t elsize, 
-    size_t max_items,
-    int (*compare)(const void *a, const void *b, void *udata),
-    void *udata)
-{
-    (void)realloc_; // realloc not used
-    malloc_ = malloc_ ? malloc_ : _malloc ? _malloc : malloc;
-    free_ = free_ ? free_ : _free ? _free : free;
-    
-    // normalize max_items
-    size_t spare_elsize;
-    size_t size = btree_memsize(elsize, &spare_elsize);
-    struct gfc_btree_s *btree = malloc_(size);
-    if (!btree) return NULL;
-    memset(btree, 0, size);
-    size_t deg = max_items/2;
-    deg = deg == 0 ? 128 : deg == 1 ? 2 : deg;
-    btree->max_items = deg*2 - 1; // max items per node. max children is +1
-    if (btree->max_items > 2045) {
-        // there must be a reasonable limit.
-        btree->max_items = 2045;
-    }
-    btree->min_items = btree->max_items / 2;    
-    btree->compare = compare;
-    btree->elsize = elsize;
-    btree->udata = udata;
-    btree->malloc = malloc_;
-    btree->free = free_;
-    btree->spare_elsize = spare_elsize;
-    return btree;
-}
-
-struct gfc_btree_s *btree_new(size_t elsize, size_t max_items,
-    int (*compare)(const void *a, const void *b, void *udata), void *udata)
-{
-    return btree_new_with_allocator(NULL, NULL, NULL, elsize, max_items,
-        compare, udata);
-}
-
-static size_t node_size(struct gfc_btree_s *btree, bool leaf, size_t *items_offset) {
-    size_t size = sizeof(struct gfc_btree_node_s);
-    if (!leaf) {
-        // add children as flexible array
-        size += sizeof(struct gfc_btree_node_s*)*(btree->max_items+1);
-    }
-    if (items_offset) *items_offset = size;
-    size += btree->elsize*btree->max_items;
-    size = align_size(size);
-    return size;
-}
-
-static struct gfc_btree_node_s *node_new(struct gfc_btree_s *btree, bool leaf) {
-    size_t items_offset;
-    size_t size = node_size(btree, leaf, &items_offset);
-    struct gfc_btree_node_s *node = btree->malloc(size);
-    if (!node) return NULL;
-    memset(node, 0, size);
-    node->leaf = leaf;
-    node->items = (char*)node+items_offset;
+  int cmp = compare(data, node->data);
+  if (cmp < 0)
+    node->left = gfc_btree_insert(node->left, data, compare);
+  else if (cmp > 0)
+    node->right = gfc_btree_insert(node->right, data, compare);
+  else
     return node;
+
+  int balance = gfc_btree_balance(node);
+
+  /*!
+  ** left-left
+  */
+  cmp = compare(data, node->left->data);
+  if (balance > 1 && cmp < 0)
+    return gfc_btree_right_rotate(node);
+
+  /*!
+  ** right-right
+  */
+  cmp = compare(data, node->right->data);
+  if (balance < -1 && cmp > 0)
+    return gfc_btree_left_rotate(node);
+
+  /*!
+  ** left-right
+  */
+  cmp = compare(data, node->left->data);
+  if (balance > 1 && cmp > 0) {
+    node->left = gfc_btree_left_rotate(node->left);
+    return gfc_btree_right_rotate(node);
+  }
+
+  /*!
+  ** right-left
+  */
+  cmp = compare(data, node->right->data);
+  if (balance < -1 && cmp < 0) {
+    node->right = gfc_btree_right_rotate(node->right);
+    return gfc_btree_left_rotate(node);
+  }
+
+  // If the node is balanced, return it
+  return node;
 }
 
-static void node_free(struct gfc_btree_s *btree, struct gfc_btree_node_s *node) {
-    if (atomic_fetch_sub(&node->rc, 1) > 0) return;
-    if (!node->leaf) {
-        for (size_t i = 0; i < (size_t)(node->num_items+1); i++) {
-            node_free(btree, node->children[i]);
-        }
-    }
-    if (btree->item_free) {
-        for (size_t i = 0; i < node->num_items; i++) {
-            void *item = get_item_at(btree, node, i);
-            btree->item_free(item, btree->udata);
-        }
-    }
-    btree->free(node);
+/*!
+** insert data to avl tree
+*/
+void
+gfc_btree_append(gfc_btree_p ctx, user_data data) {
+  gfc_btree_node_p node = gfc_btree_insert(NULL, data, ctx->compare);
+  ctx->root = node;
 }
 
-static struct gfc_btree_node_s *node_copy(struct gfc_btree_s *btree, struct gfc_btree_node_s *node) {
-    struct gfc_btree_node_s *node2 = node_new(btree, node->leaf);
-    if (!node2) return NULL;
-    node2->num_items = node->num_items;
-    size_t items_cloned = 0;
-    if (!node2->leaf) {
-        for (size_t i = 0; i < (size_t)(node2->num_items+1); i++) {
-            node2->children[i] = node->children[i];
-            atomic_fetch_add(&node2->children[i]->rc, 1);
-        }
-    }
-    if (btree->item_clone) {
-        for (size_t i = 0; i < node2->num_items; i++) {
-            void *item = get_item_at(btree, node, i);
-            if (!btree->item_clone(item, SPARE_NODE_COPY, btree->udata)) {
-                goto failed;
-            }
-            set_item_at(btree, node2, i, SPARE_NODE_COPY);
-            items_cloned++;
-        }
-    } else {
-        for (size_t i = 0; i < node2->num_items; i++) {
-            void *item = get_item_at(btree, node, i);
-            set_item_at(btree, node2, i, item);
-        }
-    }
-    return node2;
-failed:
-    if (!node2->leaf) {
-        for (size_t i = 0; i < (size_t)(node2->num_items+1); i++) {
-            atomic_fetch_sub(&node2->children[i]->rc, 1);
-        }
-    }
-    if (btree->item_free) {
-        for (size_t i = 0; i < items_cloned; i++) {
-            void *item = get_item_at(btree, node2, i);
-            btree->item_free(item, btree->udata);
-        }
-    }
-    btree->free(node2);
-    return NULL;
-}
-
-#define cow_node_or(bnode, code) { \
-    if (atomic_load(&(bnode)->rc) > 0) { \
-        struct node *node2 = node_copy(btree, (bnode)); \
-        if (!node2) { code; } \
-        atomic_fetch_sub(&(bnode)->rc, 1); \
-        (bnode) = node2; \
-    } \
-}
-
-void btree_clear(struct gfc_btree_s *btree) {
-    if (btree->root) {
-        node_free(btree, btree->root);
-    }
-    btree->oom = false;
-    btree->root = NULL;
-    btree->count = 0;
-    btree->height = 0;
-}
-
-void btree_free(struct gfc_btree_s *btree) {
-    btree_clear(btree);
-    btree->free(btree);
-}
-
-void btree_set_item_callbacks(struct gfc_btree_s *btree,
-    bool (*clone)(const void *item, void *into, void *udata), 
-    void (*free)(const void *item, void *udata))
+void
+gfc_btree_transverse0(gfc_btree_node_p node)
 {
-    btree->item_clone = clone;
-    btree->item_free = free;
+  if (node) {
+    gfc_btree_transverse0(node->left);
+    printf("%d\n", *((int*)node->data));
+    gfc_btree_transverse0(node->right);
+  }
 }
 
-struct gfc_btree_s *btree_clone(struct gfc_btree_s *btree) {
-    if (!btree) return NULL;
-    size_t size = btree_memsize(btree->elsize, NULL);
-    struct gfc_btree_s *btree2 = btree->malloc(size);
-    if (!btree2) return NULL;
-    memcpy(btree2, btree, size);
-    if (btree2->root) atomic_fetch_add(&btree2->root->rc, 1);
-    return btree2;
-}
-
-static size_t btree_search(const struct gfc_btree_s *btree, struct gfc_btree_node_s *node,
-    const void *key, bool *found, uint64_t *hint, int depth) 
+void
+gfc_btree_transverse(gfc_btree_p ctx)
 {
-    if (!hint) {
-        return node_bsearch(btree, node, key, found);
-    }
-    return node_bsearch_hint(btree, node, key, found, hint, depth);
+  gfc_btree_transverse0(ctx->root);
 }
-
-enum mut_result { 
-    NOCHANGE   = 0,
-    INSERTED   = 1,
-    MUST_SPLIT = 2,
-    REPLACED   = 3,
-    NOMEM      = 4,
-    DELETED    = 5,
-    // INSERTED or REPLACED or DELETED can be checked with (res&1)
-};
-
-static void node_split(struct gfc_btree_s *btree, struct gfc_btree_node_s *node,
-    struct gfc_btree_node_s **right, void **median) 
-{
-    *right = node_new(btree, node->leaf);
-    if (!*right) return; // NOMEM
-    int mid = (int)(btree->max_items)/2;
-    *median = get_item_at(btree, node, (size_t)mid);
-    (*right)->leaf = node->leaf;
-    (*right)->num_items = node->num_items-((short)mid+1);
-    memmove((*right)->items,
-            node->items+(int)btree->elsize*(mid+1),
-            (size_t)(*right)->num_items*btree->elsize);
-    if (!node->leaf) {
-        for (size_t i = 0; i <= (*right)->num_items; i++) {
-            (*right)->children[i] = node->children[mid+1+i];
-        }
-    }
-    node->num_items = (short)mid;
-}
-
-static enum mut_result node_set(struct gfc_btree_s *btree, struct gfc_btree_node_s *node, 
-    const void *item, uint64_t *hint, int depth) 
-{
-    // assert(atomic_load(&node->rc) == 0);
-    bool found = false;
-    size_t i = btree_search(btree, node, item, &found, hint, depth);
-    if (found) {
-        swap_item_at(btree, node, i, item, SPARE_RETURN);
-        return REPLACED;
-    }
-    if (node->leaf) {
-        if (node->num_items == btree->max_items) {
-            return MUST_SPLIT;
-        }
-        node_shift_right(btree, node, i);
-        set_item_at(btree, node, i, item);
-        return INSERTED;
-    }
-    cow_node_or(node->children[i], return NOMEM);
-    enum mut_result result = node_set(btree, node->children[i], item, hint, 
-        depth+1);
-    if (result&1) { // if (INSERTED or REPLACED)
-        return result;
-    } else if (result == NOMEM) {
-        return NOMEM;
-    }
-    // assert(result == MUST_SPLIT);
-    if (node->num_items == btree->max_items) {
-        return MUST_SPLIT;
-    }
-    void *median = NULL;
-    struct gfc_btree_node_s *right = NULL;
-    node_split(btree, node->children[i], &right, &median);
-    if (!right) {
-        return NOMEM;
-    }
-    node_shift_right(btree, node, i);
-    set_item_at(btree, node, i, median);
-    node->children[i+1] = right;
-    return node_set(btree, node, item, hint, depth);
-}
-
-static void *btree_set0(struct gfc_btree_s *btree, const void *item, uint64_t *hint,
-    bool no_item_clone)
-{
-    btree->oom = false;
-    bool item_cloned = false;
-    if (btree->item_clone && !no_item_clone) {
-        if (!btree->item_clone(item, SPARE_ITEM_CLONE, btree->udata)) {
-            goto oom;
-        }
-        item = SPARE_ITEM_CLONE;
-        item_cloned = true;
-    }
-    if (!btree->root) {
-        btree->root = node_new(btree, true);
-        if (!btree->root) goto oom;
-        set_item_at(btree, btree->root, 0, item);
-        btree->root->num_items = 1;
-        btree->count++;
-        btree->height++;
-        return NULL;
-    }
-    cow_node_or(btree->root, goto oom);
-    enum mut_result result;
-set:
-    result = node_set(btree, btree->root, item, hint, 0);
-    if (result == REPLACED) {
-        if (btree->item_free) {
-            btree->item_free(SPARE_RETURN, btree->udata);
-        }
-        return SPARE_RETURN;
-    } else if (result == INSERTED) {
-        btree->count++;
-        return NULL;
-    } else if (result == NOMEM) {
-        goto oom;
-    }
-    // assert(result == MUST_SPLIT);
-    void *old_root = btree->root;
-    struct gfc_btree_node_s *new_root = node_new(btree, false);
-    if (!new_root) goto oom;
-    struct gfc_btree_node_s *right = NULL;
-    void *median = NULL;
-    node_split(btree, old_root, &right, &median);
-    if (!right) {
-        btree->free(new_root);
-        goto oom;
-    }
-    btree->root = new_root;
-    btree->root->children[0] = old_root;
-    set_item_at(btree, btree->root, 0, median);
-    btree->root->children[1] = right;
-    btree->root->num_items = 1;
-    btree->height++;
-    goto set;
-oom:
-    if (btree->item_free) {
-        if (item_cloned) {
-            btree->item_free(SPARE_ITEM_CLONE, btree->udata);
-        }
-    }
-    btree->oom = true;
-    return NULL;
-}
-
-static const void *btree_get0(const struct gfc_btree_s *btree, const void *key, 
-    uint64_t *hint)
-{
-    struct gfc_btree_node_s *node = btree->root;
-    if (!node) return NULL;
-    bool found;
-    int depth = 0;
-    while (1) {
-        size_t i = btree_search(btree, node, key, &found, hint, depth);
-        if (found) return get_item_at((void*)btree, node, i);
-        if (node->leaf) return NULL;
-        node = node->children[i];
-        depth++;
-    }
-}
-
-static void node_rebalance(struct gfc_btree_s *btree, struct gfc_btree_node_s *node, size_t i) {
-    if (i == node->num_items) {
-        i--;
-    }
-
-    struct gfc_btree_node_s *left = node->children[i];
-    struct gfc_btree_node_s *right = node->children[i+1];
-
-    // assert(atomic_load(&left->rc)==0);
-    // assert(atomic_load(&right->rc)==0);
-
-    if (left->num_items + right->num_items < btree->max_items) {
-        // Merges the left and right children nodes together as a single node
-        // that includes (left,item,right), and places the contents into the
-        // existing left node. Delete the right node altogether and move the
-        // following items and child nodes to the left by one slot.
-
-        // merge (left,item,right)
-        copy_item(btree, left, left->num_items, node, i);
-        left->num_items++;
-        node_join(btree, left, right);
-        btree->free(right);
-        node_shift_left(btree, node, i, true);
-    } else if (left->num_items > right->num_items) {
-        // move left -> right over one slot
-
-        // Move the item of the parent node at index into the right-node first
-        // slot, and move the left-node last item into the previously moved
-        // parent item slot.
-        node_shift_right(btree, right, 0);
-        copy_item(btree, right, 0, node, i);
-        if (!left->leaf) {
-            right->children[0] = left->children[left->num_items];
-        }
-        copy_item(btree, node, i, left, left->num_items-1);
-        if (!left->leaf) {
-            left->children[left->num_items] = NULL;
-        }
-        left->num_items--;
-    } else {
-        // move right -> left
-
-        // Same as above but the other direction
-        copy_item(btree, left, left->num_items, node, i);
-        if (!left->leaf) {
-            left->children[left->num_items+1] = right->children[0];
-        }
-        left->num_items++;
-        copy_item(btree, node, i, right, 0);
-        node_shift_left(btree, right, 0, false);
-    }
-}
-
-static enum mut_result node_delete(struct gfc_btree_s *btree, struct gfc_btree_node_s *node,
-    enum delact act, size_t index, const void *key, void *prev, uint64_t *hint,
-    int depth)
-{
-    // assert(atomic_load(&node->rc)==0);
-    size_t i = 0;
-    bool found = false;
-    switch (act) {
-    case POPMAX:
-        i = node->num_items-1;
-        found = true;
-        break;
-    case POPFRONT:
-        i = 0;
-        found = node->leaf;
-        break;
-    case POPBACK:
-        if (!node->leaf) {
-            i = node->num_items;
-            found = false;
-        } else {
-            i = node->num_items-1;
-            found = true;
-        }
-        break;
-    case DELKEY:
-        i = btree_search(btree, node, key, &found, hint, depth);
-        break;
-    }
-    if (node->leaf) {
-        if (found) {
-            // Item was found in leaf, copy its contents and delete it.
-            // This might cause the number of items to drop below min_items,
-            // and it so, the caller will take care of the rebalancing.
-            copy_item_into(btree, node, i, prev);
-            node_shift_left(btree, node, i, false);
-            return DELETED;
-        }
-        return NOCHANGE;
-    }
-
-    enum mut_result result;
-    if (found) {
-        if (act == POPMAX) {
-            // Popping off the max item into into its parent branch to maintain
-            // a balanced tree.
-            i++;
-            cow_node_or(node->children[i], return NOMEM);
-            cow_node_or(node->children[i==node->num_items?i-1:i+1], 
-                return NOMEM);
-            result = node_delete(btree, node->children[i], POPMAX, 0, NULL, 
-                prev, hint, depth+1);
-            if (result == NOMEM) return NOMEM;
-            result = DELETED;
-        } else {
-            // item was found in branch, copy its contents, delete it, and 
-            // begin popping off the max items in child nodes.
-            copy_item_into(btree, node, i, prev);
-            cow_node_or(node->children[i], return NOMEM);
-            cow_node_or(node->children[i==node->num_items?i-1:i+1], 
-                return NOMEM);
-            result = node_delete(btree, node->children[i], POPMAX, 0, NULL, 
-                SPARE_POP, hint, depth+1);
-            if (result == NOMEM) return NOMEM;
-            set_item_at(btree, node, i, SPARE_POP);
-            result = DELETED;
-        }
-    } else {
-        // item was not found in this branch, keep searching.
-        cow_node_or(node->children[i], return NOMEM);
-        cow_node_or(node->children[i==node->num_items?i-1:i+1], 
-            return NOMEM);
-        result = node_delete(btree, node->children[i], act, index, key, 
-            prev, hint, depth+1);
-    }
-    if (result != DELETED) {
-        return result;
-    }
-    if (node->children[i]->num_items < btree->min_items) {
-        node_rebalance(btree, node, i);
-    }
-    return DELETED;
-}
-
-static void *btree_delete0(struct gfc_btree_s *btree, enum delact act, size_t index,
-    const void *key, uint64_t *hint) 
-{
-    btree->oom = false;
-    if (!btree->root) return NULL;
-    cow_node_or(btree->root, goto oom);
-    enum mut_result result = node_delete(btree, btree->root, act, index, 
-        key, SPARE_RETURN, hint, 0);
-    if (result == NOCHANGE) {
-        return NULL;
-    } else if (result == NOMEM) {
-        goto oom;
-    }
-    // assert(result == DELETED);
-    if (btree->root->num_items == 0) {
-        struct gfc_btree_node_s *old_root = btree->root;
-        if (!btree->root->leaf) {
-            btree->root = btree->root->children[0];
-        } else {
-            btree->root = NULL;
-        }
-        btree->free(old_root);
-        btree->height--;
-    }
-    btree->count--;
-    if (btree->item_free) {
-        btree->item_free(SPARE_RETURN, btree->udata);
-    }
-    return SPARE_RETURN;
-oom:
-    btree->oom = true;
-    return NULL;
-}
-
-const void *btree_set_hint(struct gfc_btree_s *btree, const void *item, 
-    uint64_t *hint)
-{
-    return btree_set0(btree, item, hint, false);
-}
-
-const void *btree_set(struct gfc_btree_s *btree, const void *item) {
-    return btree_set0(btree, item, NULL, false);
-}
-
-const void *btree_get_hint(const struct gfc_btree_s *btree, const void *key, 
-    uint64_t *hint)
-{
-    return btree_get0(btree, key, hint);
-}
-
-const void *btree_get(const struct gfc_btree_s *btree, const void *key) {
-    return btree_get0(btree, key, NULL);
-}
-
-const void *btree_delete_hint(struct gfc_btree_s *btree, const void *key, 
-    uint64_t *hint)
-{
-    return btree_delete0(btree, DELKEY, 0, key, hint);
-}
-
-const void *btree_delete(struct gfc_btree_s *btree, const void *key) {
-    return btree_delete0(btree, DELKEY, 0, key, NULL);
-}
-
-const void *btree_pop_min(struct gfc_btree_s *btree) {
-    btree->oom = false;
-    if (btree->root) {
-        cow_node_or(btree->root, goto oom);
-        struct gfc_btree_node_s *node = btree->root;
-        while (1) {
-            if (node->leaf) {
-                if (node->num_items > btree->min_items) {
-                    size_t i = 0;
-                    copy_item_into(btree, node, i, SPARE_RETURN);
-                    node_shift_left(btree, node, i, false);
-                    if (btree->item_free) {
-                        btree->item_free(SPARE_RETURN, btree->udata);
-                    }
-                    btree->count--;
-                    return SPARE_RETURN;
-                }
-                break;
-            }
-            cow_node_or(node->children[0], goto oom);
-            node = node->children[0];
-        }
-    }
-    return btree_delete0(btree, POPFRONT, 0, NULL, NULL);
-oom:
-    btree->oom = true;
-    return NULL;
-}
-
-const void *btree_pop_max(struct gfc_btree_s *btree) {
-    btree->oom = false;
-    if (btree->root) {
-        cow_node_or(btree->root, goto oom);
-        struct gfc_btree_node_s *node = btree->root;
-        while (1) {
-            if (node->leaf) {
-                if (node->num_items > btree->min_items) {
-                    size_t i = node->num_items-1;
-                    copy_item_into(btree, node, i, SPARE_RETURN);
-                    node->num_items--;
-                    if (btree->item_free) {
-                        btree->item_free(SPARE_RETURN, btree->udata);
-                    }
-                    btree->count--;
-                    return SPARE_RETURN;
-                }
-                break;
-            }
-            cow_node_or(node->children[node->num_items], goto oom);
-            node = node->children[node->num_items];
-        }
-    }
-    return btree_delete0(btree, POPBACK, 0, NULL, NULL);
-oom:
-    btree->oom = true;
-    return NULL;
-}
-
-bool btree_oom(const struct gfc_btree_s *btree) {
-    return !btree || btree->oom;
-}
-
-size_t btree_count(const struct gfc_btree_s *btree) {
-    return btree->count;
-}
-
-int btree_compare(const struct gfc_btree_s *btree, const void *a, const void *b) {
-    return btree->compare(a, b, btree->udata);
-}
-
-static bool node_scan(const struct gfc_btree_s *btree, struct gfc_btree_node_s *node, 
-    bool (*iter)(const void *item, void *udata), void *udata)
-{
-    if (node->leaf) {
-        for (size_t i = 0; i < node->num_items; i++) {
-            if (!iter(get_item_at((void*)btree, node, i), udata)) {
-                return false;
-            }
-        }
-        return true;
-    }
-    for (size_t i = 0; i < node->num_items; i++) {
-        if (!node_scan(btree, node->children[i], iter, udata)) {
-            return false;
-        }
-        if (!iter(get_item_at((void*)btree, node, i), udata)) {
-            return false;
-        }
-    }
-    return node_scan(btree, node->children[node->num_items], iter, udata);
-}
-
-static bool node_ascend(const struct gfc_btree_s *btree, struct gfc_btree_node_s *node, 
-    const void *pivot, bool (*iter)(const void *item, void *udata), 
-    void *udata, uint64_t *hint, int depth) 
-{
-    bool found;
-    size_t i = btree_search(btree, node, pivot, &found, hint, depth);
-    if (!found) {
-        if (!node->leaf) {
-            if (!node_ascend(btree, node->children[i], pivot, iter, udata,
-                hint, depth+1)) 
-            {
-                return false;
-            }
-        }
-    }
-    for (; i < node->num_items; i++) {
-        if (!iter(get_item_at((void*)btree, node, i), udata)) {
-            return false;
-        }
-        if (!node->leaf) {
-            if (!node_scan(btree, node->children[i+1], iter, udata)) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
-bool btree_ascend_hint(const struct gfc_btree_s *btree, const void *pivot, 
-    bool (*iter)(const void *item, void *udata), void *udata, uint64_t *hint) 
-{
-    if (btree->root) {
-        if (!pivot) {
-            return node_scan(btree, btree->root, iter, udata);
-        }
-        return node_ascend(btree, btree->root, pivot, iter, udata, hint, 0);
-    }
-    return true;
-}
-
-bool btree_ascend(const struct gfc_btree_s *btree, const void *pivot, 
-    bool (*iter)(const void *item, void *udata), void *udata) 
-{
-    return btree_ascend_hint(btree, pivot, iter, udata, NULL);
-}
-
-static bool node_reverse(const struct gfc_btree_s *btree, struct gfc_btree_node_s *node, 
-    bool (*iter)(const void *item, void *udata), void *udata) 
-{
-    if (node->leaf) {
-        size_t i = node->num_items - 1;
-        while (1) {
-            if (!iter(get_item_at((void*)btree, node, i), udata)) {
-                return false;
-            }
-            if (i == 0) break;
-            i--;
-        }
-        return true;
-    }
-    if (!node_reverse(btree, node->children[node->num_items], iter, udata)) {
-        return false;
-    }
-    size_t i = node->num_items - 1;
-    while (1) {
-        if (!iter(get_item_at((void*)btree, node, i), udata)) {
-            return false;
-        }
-        if (!node_reverse(btree, node->children[i], iter, udata)) {
-            return false;
-        }
-        if (i == 0) break;
-        i--;
-    }
-    return true;
-}
-
-static bool node_descend(const struct gfc_btree_s *btree, struct gfc_btree_node_s *node, 
-    const void *pivot, 
-    bool (*iter)(const void *item, void *udata), 
-    void *udata, uint64_t *hint, int depth) 
-{
-    bool found;
-    size_t i = btree_search(btree, node, pivot, &found, hint, depth);
-    if (!found) {
-        if (!node->leaf) {
-            if (!node_descend(btree, node->children[i], pivot, iter, udata, 
-                hint, depth+1)) 
-            {
-                return false;
-            }
-        }
-        if (i == 0) return true;
-        i--;
-    }
-    while(1) {
-        if (!iter(get_item_at((void*)btree, node, i), udata)) {
-            return false;
-        }
-        if (!node->leaf) {
-            if (!node_reverse(btree, node->children[i], iter, udata)) {
-                return false;
-            }
-        }
-        if (i == 0) break;
-        i--;
-    }
-    return true;
-}
-
-bool btree_descend_hint(const struct gfc_btree_s *btree, const void *pivot, 
-    bool (*iter)(const void *item, void *udata), void *udata, uint64_t *hint) 
-{
-    if (btree->root) {
-        if (!pivot) {
-            return node_reverse(btree, btree->root, iter, udata);
-        }
-        return node_descend(btree, btree->root, pivot, iter, udata, hint, 
-            0);
-    }
-    return true;
-}
-
-bool btree_descend(const struct gfc_btree_s *btree, const void *pivot, 
-    bool (*iter)(const void *item, void *udata), void *udata) 
-{
-    return btree_descend_hint(btree, pivot, iter, udata, NULL);
-}
-
-const void *btree_min(const struct gfc_btree_s *btree) {
-    struct gfc_btree_node_s *node = btree->root;
-    if (!node) return NULL;
-    while (1) {
-        if (node->leaf) {
-            return get_item_at((void*)btree, node, 0);
-        }
-        node = node->children[0];
-    }
-}
-
-const void *btree_max(const struct gfc_btree_s *btree) {
-    struct gfc_btree_node_s *node = btree->root;
-    if (!node) return NULL;
-    while (1) {
-        if (node->leaf) {
-            return get_item_at((void*)btree, node, node->num_items-1);
-        }
-        node = node->children[node->num_items];
-    }
-}
-
-const void *btree_load(struct gfc_btree_s *btree, const void *item) {
-    btree->oom = false;
-    if (!btree->root) {
-        return btree_set0(btree, item, NULL, false);
-    }
-    bool item_cloned = false;
-    if (btree->item_clone) {
-        if (!btree->item_clone(item, SPARE_ITEM_CLONE, btree->udata)) {
-            goto oom;
-        }
-        item = SPARE_ITEM_CLONE;
-        item_cloned = true;
-    }
-    cow_node_or(btree->root, goto oom);
-    struct gfc_btree_node_s *node = btree->root;
-    while (1) {
-        if (node->leaf) {
-            if (node->num_items == btree->max_items) break;
-            void *litem = get_item_at(btree, node, node->num_items-1);
-            if (btcompare(btree, item, litem) <= 0) break;
-            set_item_at(btree, node, node->num_items, item);
-            node->num_items++;
-            btree->count++;
-            return NULL;
-        }
-        cow_node_or(node->children[node->num_items], goto oom);
-        node = node->children[node->num_items];
-    }
-    const void *prev = btree_set0(btree, item, NULL, true);
-    if (!btree->oom) return prev;
-oom:
-    if (btree->item_free && item_cloned) {
-        btree->item_free(SPARE_ITEM_CLONE, btree->udata);
-    }
-    btree->oom = true;
-    return NULL;
-}
-
-size_t btree_height(const struct gfc_btree_s *btree) {
-    return btree->height;
-}
-
-#ifdef TEST_PRIVATE_FUNCTIONS
-#include "tests/priv_funcs.h"
-#endif
