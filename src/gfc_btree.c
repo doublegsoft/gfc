@@ -194,27 +194,27 @@ gfc_btree_insert(gfc_btree_node_p node, user_data data, int (*compare)(const use
   else
     return node;
 
+  node->height = 1 + gfc_btree_max(gfc_btree_height(node->left), gfc_btree_height(node->right));
+
   int balance = gfc_btree_balance(node);
 
   /*!
   ** left-left
   */
-  cmp = compare(data, node->left->data);
-  if (balance > 1 && cmp < 0)
+  if (balance > 1 && compare(data, node->left->data) < 0)
     return gfc_btree_right_rotate(node);
 
   /*!
   ** right-right
   */
-  cmp = compare(data, node->right->data);
-  if (balance < -1 && cmp > 0)
+  if (balance < -1 && compare(data, node->right->data) > 0)
     return gfc_btree_left_rotate(node);
 
   /*!
   ** left-right
   */
-  cmp = compare(data, node->left->data);
-  if (balance > 1 && cmp > 0) {
+  if (balance > 1 && compare(data, node->left->data) > 0)
+  {
     node->left = gfc_btree_left_rotate(node->left);
     return gfc_btree_right_rotate(node);
   }
@@ -222,8 +222,8 @@ gfc_btree_insert(gfc_btree_node_p node, user_data data, int (*compare)(const use
   /*!
   ** right-left
   */
-  cmp = compare(data, node->right->data);
-  if (balance < -1 && cmp < 0) {
+  if (balance < -1 && compare(data, node->right->data) < 0)
+  {
     node->right = gfc_btree_right_rotate(node->right);
     return gfc_btree_left_rotate(node);
   }
@@ -236,9 +236,9 @@ gfc_btree_insert(gfc_btree_node_p node, user_data data, int (*compare)(const use
 ** insert data to avl tree
 */
 void
-gfc_btree_append(gfc_btree_p ctx, user_data data) {
-  gfc_btree_node_p node = gfc_btree_insert(NULL, data, ctx->compare);
-  ctx->root = node;
+gfc_btree_append(gfc_btree_p ctx, user_data data)
+{
+  ctx->root = gfc_btree_insert(ctx->root, data, ctx->compare);
 }
 
 void
@@ -246,7 +246,7 @@ gfc_btree_transverse0(gfc_btree_node_p node)
 {
   if (node) {
     gfc_btree_transverse0(node->left);
-    printf("%d\n", *((int*)node->data));
+    printf("%d ", *((int*)node->data));
     gfc_btree_transverse0(node->right);
   }
 }

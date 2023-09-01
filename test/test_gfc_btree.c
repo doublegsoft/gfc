@@ -55,7 +55,7 @@ main(int argc, char* argv[])
   for (int i = 0; i < 100; i++)
   {
     int* ptr = (int*) malloc(sizeof(int));
-    *ptr = i;
+    *ptr = (99 - i);
     gfc_btree_append(btree, ptr);
   }
 
