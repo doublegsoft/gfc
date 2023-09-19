@@ -48,8 +48,6 @@ main(int argc, char* argv[])
 {
   gfc_gc_init();
 
-
-
   gfc_btree_p btree = gfc_btree_new(compare);
 
   for (int i = 0; i < 100; i++)
