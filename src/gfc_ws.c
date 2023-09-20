@@ -47,6 +47,10 @@ typedef unsigned long in_addr_t;
 #include "gfc_ws.h"
 #include "gfc_gc.h"
 
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL 0
+#endif
+
 #define GFC_WS_REQUEST_DUMMY            "GET / HTTP/1.1\r\n"                                      \
                                         "Host: localhost:8080\r\n"                                \
                                         "Connection: Upgrade\r\n"                                 \

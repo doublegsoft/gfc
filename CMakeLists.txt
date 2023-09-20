@@ -31,6 +31,8 @@ cmake_minimum_required(VERSION 3.6)
 
 project(gfc VERSION 1.0.0 DESCRIPTION "g foundation class")
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_BSD_SOURCE")
+
 include_directories(include)
 
 add_library(gfc STATIC

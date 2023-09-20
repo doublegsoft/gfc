@@ -173,7 +173,11 @@ gfc_log_init(const char* path, const char* app)
   if (dir) {
     closedir(dir);
   } else {
+#ifdef __MINGW32__
+    mkdir(path);
+#else
     mkdir(path, 0755);
+#endif
   }
   strcpy(_gfc_log_dir, path);
   strcpy(_gfc_log_app, app);

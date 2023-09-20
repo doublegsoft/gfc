@@ -33,6 +33,10 @@
 #include <errno.h>
 #include <unistd.h>
 
+#ifdef __MINGW32__
+#include <windows.h>
+#endif
+
 #include "gfc_fs.h"
 
 void
@@ -50,6 +54,9 @@ gfc_fs_rm(const char* path)
     return;
   }
 
+#ifdef __MINGW32__
+  RemoveDirectory(path);
+#else
   DIR* dir = opendir(path);
   if (ENOENT == errno)
     return;
@@ -71,4 +78,5 @@ gfc_fs_rm(const char* path)
     remove(subpath);
   }
   rmdir(path);
+#endif
 }
