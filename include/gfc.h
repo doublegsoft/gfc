@@ -27,6 +27,7 @@ extern "C"
 
 #include "gfc_type.h"
 #include "gfc_string.h"
+#include "gfc_utf8.h"
 #include "gfc_date.h"
 #include "gfc_uuid.h"
 #include "gfc_list.h"
@@ -40,11 +41,7 @@ extern "C"
 #include "gfc_ws.h"
 #include "gfc_mt.h"
 #include "gfc_gc.h"
-
-/*!
-** Added on Dec 26, 2020
-*/
-#include "gfc_utf8.h"
+#include "gfc_fs.h"
 
 #ifdef __cplusplus
 }

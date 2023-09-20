@@ -52,6 +52,7 @@ add_library(gfc STATIC
   src/gfc_mt.c
   src/gfc_ws.c
   src/gfc_gc.c
+  src/gfc_fs.c
 )
 
 add_executable(test_gfc_string

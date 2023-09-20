@@ -86,6 +86,8 @@ heapsort_worker(void* data)
 {
   struct heapsort_data_s* p = (struct heapsort_data_s*) data;
   heap_sort(p->nums, p->start, p->end);
+
+  return NULL;
 }
 
 void
