@@ -57,11 +57,25 @@ add_library(gfc STATIC
   src/gfc_fs.c
 )
 
-add_executable(test_gfc_string
-  src/gfc_string.c
-  src/gfc_gc.c
-  test/test_gfc_string.c
-)
+if (!WIN32)
+	add_executable(test_gfc_string
+	  src/gfc_string.c
+	  src/gfc_gc.c
+	  test/test_gfc_string.c
+	)
+	add_executable(test_gfc_map
+	  src/gfc_map.c
+	  src/gfc_string.c
+	  src/gfc_gc.c
+	  test/test_gfc_map.c
+	)
+#	link_directories(
+#		"/opt/local/x86_64-w64-mingw32/lib"
+#	)
+#	target_link_libraries(test_gfc_string PRIVATE
+#	  libiconv.a
+#	)
+endif (!WIN32)
 
 add_executable(test_gfc_date
   src/gfc_date.c
@@ -94,13 +108,6 @@ add_executable(test_gfc_lru
   test/test_gfc_lru.c
 )
 
-add_executable(test_gfc_map
-  src/gfc_map.c
-  src/gfc_string.c
-  src/gfc_gc.c
-  test/test_gfc_map.c
-)
-
 add_executable(test_gfc_list
   src/gfc_list.c
   src/gfc_gc.c
@@ -119,6 +126,13 @@ add_executable(test_gfc_ws
   test/test_gfc_ws.c
 )
 
-target_link_libraries(test_gfc_ws PRIVATE
-  pthread
-)
+if (WIN32)
+	target_link_libraries(test_gfc_ws PRIVATE
+	  pthread
+	  wsock32
+	)
+else()
+	target_link_libraries(test_gfc_ws PRIVATE
+	  pthread
+	)
+endif (WIN32)
