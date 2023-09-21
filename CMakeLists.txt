@@ -57,25 +57,36 @@ add_library(gfc STATIC
   src/gfc_fs.c
 )
 
-if (!WIN32)
-	add_executable(test_gfc_string
-	  src/gfc_string.c
-	  src/gfc_gc.c
-	  test/test_gfc_string.c
+if (WIN32)
+	link_directories(
+		"/opt/local/x86_64-w64-mingw32/lib"
 	)
-	add_executable(test_gfc_map
-	  src/gfc_map.c
-	  src/gfc_string.c
-	  src/gfc_gc.c
-	  test/test_gfc_map.c
+endif (WIN32)
+
+add_executable(test_gfc_string
+	src/gfc_string.c
+	src/gfc_gc.c
+	test/test_gfc_string.c
+)
+
+if (WIN32)
+	target_link_libraries(test_gfc_string PRIVATE
+	  libiconv.dll.a
 	)
-#	link_directories(
-#		"/opt/local/x86_64-w64-mingw32/lib"
-#	)
-#	target_link_libraries(test_gfc_string PRIVATE
-#	  libiconv.a
-#	)
-endif (!WIN32)
+endif (WIN32)
+
+add_executable(test_gfc_map
+	src/gfc_map.c
+	src/gfc_string.c
+	src/gfc_gc.c
+	test/test_gfc_map.c
+)
+	
+if (WIN32)
+	target_link_libraries(test_gfc_map PRIVATE
+	  libiconv.dll.a
+	)
+endif (WIN32)
 
 add_executable(test_gfc_date
   src/gfc_date.c

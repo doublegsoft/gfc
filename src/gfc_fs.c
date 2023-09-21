@@ -125,10 +125,7 @@ gfc_fs_touch(const char* path)
 
   char* filename = strrchr(subpath, '/');
   if (filename != NULL)
-  {
     *filename = '\0';
-    filename++;
-  }
 
   gfc_fs_mkdirs(subpath);
   FILE* fp = fopen(path, "w");
