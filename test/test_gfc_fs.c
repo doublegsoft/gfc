@@ -26,28 +26,12 @@
 ** You should have received a copy of the GNU General Public License
 ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef __GFC_FS_H__
-#define __GFC_FS_H__
+#include "gfc_fs.h"
 
-#ifdef __cplusplus
-extern "C"
+int
+main(int argc, char* argv[])
 {
-#endif
-
-void
-gfc_fs_rm(const char* path);
-
-void
-gfc_fs_mkdirs(const char* path);
-
-/*!
-** Creates a file with specific path.
-*/
-void
-gfc_fs_touch(const char* path);
-
-#ifdef __cplusplus
+//  gfc_fs_mkdirs("/Users/christian/Downloads/a/b");
+  gfc_fs_touch("/Users/christian/Downloads/a/b/c/d.txt");
+  return 0;
 }
-#endif
-
-#endif // __GFC_FS_H__

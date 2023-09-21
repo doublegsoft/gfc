@@ -136,3 +136,8 @@ else()
 	  pthread
 	)
 endif (WIN32)
+
+add_executable(test_gfc_fs
+  src/gfc_fs.c
+  test/test_gfc_fs.c
+)

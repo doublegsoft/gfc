@@ -33,7 +33,7 @@
 #include <errno.h>
 #include <unistd.h>
 
-#ifdef __MINGW32__
+#ifdef WIN32
 #include <windows.h>
 #endif
 
@@ -54,7 +54,22 @@ gfc_fs_rm(const char* path)
     return;
   }
 
-#ifdef __MINGW32__
+#ifdef WIN32
+  char subpath[2048];
+  strcpy(subpath, path);
+  strcat(subpath, "\\*");
+  WIN32_FIND_DATA findFileData;
+  HANDLE hFind = FindFirstFile(subpath, &findFileData);
+
+  do {
+    subpath[0] = '\0';
+    strcpy(subpath, path);
+    strcat(subpath, "/");
+    strcat(subpath, findFileData.cFileName);
+    gfc_fs_rm(subpath);
+  } while (FindNextFile(hFind, &findFileData) != 0);
+  FindClose(hFind);
+
   RemoveDirectory(path);
 #else
   DIR* dir = opendir(path);
@@ -70,13 +85,52 @@ gfc_fs_rm(const char* path)
     strcpy(subpath, path);
     strcat(subpath, "/");
     strcat(subpath, entry->d_name);
-    if (entry->d_type == DT_DIR)
-    {
-      gfc_fs_rm(subpath);
-      continue;
-    }
-    remove(subpath);
+    gfc_fs_rm(subpath);
   }
   rmdir(path);
 #endif
+}
+
+void
+gfc_fs_mkdirs(const char* path)
+{
+  char subpath[4096] = {'\0'};
+  strcpy(subpath, path);
+
+  const char* delimiter = "/";
+  char* token = strtok(subpath, delimiter);
+
+  char dir[4096] = {'\0'};
+  if (subpath[0] == '/')
+    strcpy(dir, "/");
+  while (token != NULL)
+  {
+    strcat(dir, token);
+    strcat(dir, "/");
+    if (access(dir, F_OK) != 0)
+#ifdef WIN32
+      mkdir(dir);
+#else
+      mkdir(dir, 0755);
+#endif
+    token = strtok(NULL, delimiter);
+  }
+}
+
+void
+gfc_fs_touch(const char* path)
+{
+  char subpath[4096] = {'\0'};
+  strcpy(subpath, path);
+
+  char* filename = strrchr(subpath, '/');
+  if (filename != NULL)
+  {
+    *filename = '\0';
+    filename++;
+  }
+
+  gfc_fs_mkdirs(subpath);
+  FILE* fp = fopen(path, "w");
+  fclose(fp);
 }
