@@ -34,6 +34,8 @@ extern "C"
 {
 #endif
 
+#include "gfc_type.h"
+
 void
 gfc_fs_rm(const char* path);
 
@@ -45,6 +47,9 @@ gfc_fs_mkdirs(const char* path);
 */
 void
 gfc_fs_touch(const char* path);
+
+void
+gfc_fs_iterate(const char* path, user_data data, void (*resolve)(const char*, user_data));
 
 #ifdef __cplusplus
 }

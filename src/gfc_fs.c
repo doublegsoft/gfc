@@ -40,6 +40,58 @@
 #include "gfc_fs.h"
 
 void
+gfc_fs_iterate(const char* path, user_data data, void (*resolve)(const char*, user_data data))
+{
+  if (access(path, F_OK) != 0)
+    return;
+
+  struct stat path_stat;
+  stat(path, &path_stat);
+
+  if (S_ISREG(path_stat.st_mode))
+  {
+    resolve(path, data);
+    return;
+  }
+
+#ifdef WIN32
+  char subpath[2048];
+  strcpy(subpath, path);
+  strcat(subpath, "\\*");
+  WIN32_FIND_DATA findFileData;
+  HANDLE hFind = FindFirstFile(subpath, &findFileData);
+
+  do {
+    subpath[0] = '\0';
+    strcpy(subpath, path);
+    strcat(subpath, "/");
+    strcat(subpath, findFileData.cFileName);
+    gfc_fs_iterate(subpath, data, resolve);
+  } while (FindNextFile(hFind, &findFileData) != 0);
+  FindClose(hFind);
+
+  resolve(path, data);
+#else
+  DIR* dir = opendir(path);
+  if (ENOENT == errno)
+    return;
+  struct dirent* entry;
+  while ((entry = readdir(dir)) != NULL)
+  {
+    if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+      continue;
+
+    char subpath[2048];
+    strcpy(subpath, path);
+    strcat(subpath, "/");
+    strcat(subpath, entry->d_name);
+    gfc_fs_iterate(subpath, data, resolve);
+  }
+  resolve(path, data);
+#endif
+}
+
+void
 gfc_fs_rm(const char* path)
 {
   if (access(path, F_OK) != 0)
