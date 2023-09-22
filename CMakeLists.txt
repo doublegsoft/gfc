@@ -61,6 +61,9 @@ if (WIN32)
 	link_directories(
 		"/opt/local/x86_64-w64-mingw32/lib"
 	)
+	target_link_libraries(gfc PRIVATE
+	  libiconv.dll.a
+	)
 endif (WIN32)
 
 add_executable(test_gfc_string
