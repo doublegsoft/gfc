@@ -55,6 +55,7 @@ add_library(gfc STATIC
   src/gfc_ws.c
   src/gfc_gc.c
   src/gfc_fs.c
+  src/gfc_cli.c
 )
 
 if (WIN32)
