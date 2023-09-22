@@ -37,6 +37,9 @@ extern "C"
 #include "gfc_type.h"
 
 void
+gfc_fs_mv(const char* src, const char* dst);
+
+void
 gfc_fs_rm(const char* path);
 
 void

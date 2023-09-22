@@ -45,15 +45,14 @@ gfc_fs_iterate(const char* path, user_data data, void (*resolve)(const char*, us
   if (access(path, F_OK) != 0)
     return;
 
-  struct stat path_stat;
-  stat(path, &path_stat);
+  struct stat attrib;
+  stat(path, &attrib);
 
-  if (S_ISREG(path_stat.st_mode))
+  if (S_ISREG(attrib.st_mode))
   {
     resolve(path, data);
     return;
   }
-
 #ifdef WIN32
   char subpath[2048];
   strcpy(subpath, path);
@@ -73,8 +72,6 @@ gfc_fs_iterate(const char* path, user_data data, void (*resolve)(const char*, us
   resolve(path, data);
 #else
   DIR* dir = opendir(path);
-  if (ENOENT == errno)
-    return;
   struct dirent* entry;
   while ((entry = readdir(dir)) != NULL)
   {
@@ -87,8 +84,35 @@ gfc_fs_iterate(const char* path, user_data data, void (*resolve)(const char*, us
     strcat(subpath, entry->d_name);
     gfc_fs_iterate(subpath, data, resolve);
   }
+  closedir(dir);
+
   resolve(path, data);
 #endif
+}
+
+static void
+gfc_fs_rm_(const char* path, user_data data)
+{
+  /*!
+  ** non-existing
+  */
+  if (access(path, F_OK) != 0)
+    return;
+
+  struct stat attrib;
+  stat(path, &attrib);
+
+  if (S_ISREG(attrib.st_mode))
+    remove(path);
+  else if (S_ISDIR(attrib.st_mode))
+  {
+#ifdef WIN32
+    RemoveDirectory(path);
+#else
+    rmdir(path);
+#endif
+  }
+
 }
 
 void
@@ -96,56 +120,76 @@ gfc_fs_rm(const char* path)
 {
   if (access(path, F_OK) != 0)
     return;
+  gfc_fs_iterate(path, NULL, gfc_fs_rm_);
+}
 
-  struct stat path_stat;
-  stat(path, &path_stat);
+struct gfc_fs_mv_s
+{
+  char* src;
+  char* dst;
+};
 
-  if (S_ISREG(path_stat.st_mode))
-  {
-    remove(path);
+static void
+gfc_fs_mv_(const char* path, user_data data)
+{
+  struct gfc_fs_mv_s* ctx = (struct gfc_fs_mv_s*) data;
+
+  /*!
+  ** not existing
+  */
+  if (access(path, F_OK) != 0)
     return;
-  }
 
-#ifdef WIN32
-  char subpath[2048];
-  strcpy(subpath, path);
-  strcat(subpath, "\\*");
-  WIN32_FIND_DATA findFileData;
-  HANDLE hFind = FindFirstFile(subpath, &findFileData);
+  struct stat attrib;
+  stat(path, &attrib);
 
-  do {
-    subpath[0] = '\0';
-    strcpy(subpath, path);
-    strcat(subpath, "/");
-    strcat(subpath, findFileData.cFileName);
-    gfc_fs_rm(subpath);
-  } while (FindNextFile(hFind, &findFileData) != 0);
-  FindClose(hFind);
-
-  RemoveDirectory(path);
-#else
-  DIR* dir = opendir(path);
-  if (ENOENT == errno)
-    return;
-  struct dirent* entry;
-  while ((entry = readdir(dir)) != NULL)
-  {
-    if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
-      continue;
-
-    char subpath[2048];
-    strcpy(subpath, path);
-    strcat(subpath, "/");
-    strcat(subpath, entry->d_name);
-    gfc_fs_rm(subpath);
-  }
-  rmdir(path);
+  if (S_ISDIR(attrib.st_mode)
+#ifndef WIN32
+      || S_ISLNK(attrib.st_mode)
 #endif
+  )
+    return;
+
+  char* ptr = (char*) path;
+  ptr += strlen(ctx->src) + 1;
+
+  char dstpath[4096] = {'\0'};
+  strcpy(dstpath, ctx->dst);
+  strcat(dstpath, "/");
+  strcat(dstpath, ptr);
+
+  gfc_fs_touch(dstpath);
+
+  char buff[4096];
+  size_t bytes_read;
+
+  FILE* fsrc = fopen(path, "rb");
+  FILE* fdst = fopen(dstpath, "wb");
+
+  while ((bytes_read = fread(buff, sizeof(char), 4096, fsrc)) > 0)
+    fwrite(buff, sizeof(char), bytes_read, fdst);
+
+  fclose(fsrc);
+  fclose(fdst);
+}
+
+void
+gfc_fs_mv(const char* src, const char* dst)
+{
+  struct gfc_fs_mv_s ctx;
+
+  ctx.src = (char*) src;
+  ctx.dst = (char*) dst;
+
+  gfc_fs_iterate(src, &ctx, gfc_fs_mv_);
 }
 
 void
 gfc_fs_mkdirs(const char* path)
 {
+  if (access(path, F_OK) == 0)
+    return;
+
   char subpath[4096] = {'\0'};
   strcpy(subpath, path);
 
@@ -158,13 +202,15 @@ gfc_fs_mkdirs(const char* path)
   while (token != NULL)
   {
     strcat(dir, token);
-    strcat(dir, "/");
     if (access(dir, F_OK) != 0)
+    {
 #ifdef WIN32
       mkdir(dir);
 #else
-      mkdir(dir, 0755);
+      mkdir(dir, S_IRWXU);
 #endif
+    }
+    strcat(dir, "/");
     token = strtok(NULL, delimiter);
   }
 }
