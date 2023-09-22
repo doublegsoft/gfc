@@ -26,6 +26,11 @@
 **
 ** @since 1.0
 */
+#include <openssl/des.h>
+#include <openssl/rsa.h>
+#include <openssl/aes.h>
+#include <openssl/pem.h>
+
 #include "gfc_crypto.h"
 #include "gfc_type.h"
 

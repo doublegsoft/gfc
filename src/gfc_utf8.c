@@ -27,27 +27,27 @@ gfc_utf8_continuation(char c) {
 }
 
 static int32_t
-gfc_utf8_single(char * c) {
+gfc_utf8_single(const char * c) {
   return (c[0] & 0x80) == 0x0;
 }
 
 static int32_t
-gfc_utf8_double(char * c) {
+gfc_utf8_double(const char * c) {
   return (c[0] & 0xe0) == 0xc0 && gfc_utf8_continuation(c[1]);
 }
 
 static int32_t
-gfc_utf8_triple(char * c) {
+gfc_utf8_triple(const char * c) {
   return (c[0] & 0xf0) == 0xe0 && gfc_utf8_continuation(c[1]) && gfc_utf8_continuation(c[2]);
 }
 
 static int32_t
-gfc_utf8_quadruple(char * c) {
+gfc_utf8_quadruple(const char * c) {
   return (c[0] & 0xf8) == 0xf0 && gfc_utf8_continuation(c[1]) && gfc_utf8_continuation(c[2]) && gfc_utf8_continuation(c[3]);
 }
 
 GFC_API uint
-gfc_utf8_length(char* str)
+gfc_utf8_length(const char* str)
 {
   size_t i = 0, len = 0;
   while(str[i])

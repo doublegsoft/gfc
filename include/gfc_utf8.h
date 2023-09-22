@@ -49,7 +49,7 @@ struct gfc_utf8_string_s
 };
 
 GFC_API uint
-gfc_utf8_length(char* str);
+gfc_utf8_length(const char* str);
 
 GFC_API uint
 gfc_utf8_initial(const char* str, char* buff);

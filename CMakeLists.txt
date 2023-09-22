@@ -31,9 +31,18 @@ cmake_minimum_required(VERSION 3.6)
 
 project(gfc VERSION 1.0.0 DESCRIPTION "g foundation class")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_BSD_SOURCE")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_BSD_SOURCE -DGFC_USE_OPENSSL -Wno-format -Wno-deprecated-declarations")
 
-include_directories(include)
+if (WIN32)
+	include_directories(
+		"include"
+	)
+else ()  
+	include_directories(
+		"/usr/local/include"
+		"include"
+	)
+endif(WIN32)
 
 add_library(gfc STATIC
   src/gfc_base64.c
@@ -156,3 +165,19 @@ add_executable(test_gfc_fs
   src/gfc_fs.c
   test/test_gfc_fs.c
 )
+
+add_executable(test_gfc_crypto
+  src/gfc_crypto.c
+  src/gfc_hex.c
+  test/test_gfc_crypto.c
+)
+
+if (WIN32)
+	target_link_libraries(test_gfc_crypto PRIVATE
+	  libcrypto.a
+	)
+else (UNIX)
+	target_link_libraries(test_gfc_crypto PRIVATE
+	  /usr/local/lib/libcrypto.a
+	)
+endif (WIN32)
