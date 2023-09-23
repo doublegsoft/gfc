@@ -250,6 +250,7 @@ gfc_crypto_des_ecb3_decrypt(const byte* ciphertext,
 
   for (i = 0; i < decryption_count; i++)
   {
+    memset(block_plaintext, 0, 8);
     memcpy(block_ciphertext, ciphertext + 8 * i, 8);
     DES_ecb3_encrypt((const_DES_cblock*) block_ciphertext,
                      (DES_cblock*) block_plaintext,
@@ -258,7 +259,15 @@ gfc_crypto_des_ecb3_decrypt(const byte* ciphertext,
     memcpy(plaintext + 8 * i, block_plaintext, 8);
   }
 
-  return padding_length;
+  for (i = 0; i < padding_length; i++)
+  {
+    if (plaintext[i] <= 32)
+    {
+      plaintext[i] = '\0';
+      break;
+    }
+  }
+  return strlen(plaintext);
 }
 
 GFC_API int

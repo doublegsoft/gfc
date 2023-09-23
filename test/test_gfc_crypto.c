@@ -195,7 +195,7 @@ main()
   printf("decoded = %s\n", decoded);
 
   const char* plaintext = "ganguo800717";
-  const char* cipher = "01234567899876543210";
+  const char* cipher = "1234567890";
   byte ciphertext[1024];
 
   int ciphertext_length = gfc_crypto_des_ecb3_encrypt(plaintext, cipher, strlen(cipher), ciphertext);
@@ -211,7 +211,7 @@ main()
 
   char decrypted_text[1024] = {'\0'};
   int plaintext_length = gfc_crypto_des_ecb3_decrypt((const byte*)ciphertext, ciphertext_length, (const byte*)cipher, strlen(cipher), decrypted_text);
-  printf("decrypted by 3DES: %s\n", decrypted_text);
+  printf("decrypted by 3DES: %s (%d)\n", decrypted_text, plaintext_length);
 
   // 大整数测试
   BN_CTX* ctx = BN_CTX_new();
