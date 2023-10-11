@@ -54,6 +54,9 @@ gfc_fs_touch(const char* path);
 void
 gfc_fs_iterate(const char* path, user_data data, void (*resolve)(const char*, user_data));
 
+void
+gfc_fs_write(const char* path, const byte* content, size_t len);
+
 #ifdef __cplusplus
 }
 #endif

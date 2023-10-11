@@ -229,3 +229,11 @@ gfc_fs_touch(const char* path)
   FILE* fp = fopen(path, "w");
   fclose(fp);
 }
+
+void
+gfc_fs_write(const char* path, const byte* content, size_t len)
+{
+  FILE* fp = fopen(path, "w");
+  fwrite(content, sizeof(byte), len, fp);
+  fclose(fp);
+}
