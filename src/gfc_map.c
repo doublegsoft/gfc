@@ -218,7 +218,7 @@ int gfc_map_rehash(gfc_map_p map){
   gfc_map_element_p curr;
 
   gfc_map_element_p temp = (gfc_map_element_p)
-        calloc(2 * map->table_size, sizeof(gfc_map_element_t));
+        gfc_gc_malloc(sizeof(gfc_map_element_t), 2 * map->table_size);
   if(!temp) return GFC_ERROR_MAP_OUT_OF_MEMORY;
 
   /* Update the array */
