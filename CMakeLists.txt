@@ -163,6 +163,8 @@ endif (WIN32)
 
 add_executable(test_gfc_fs
   src/gfc_fs.c
+  src/gfc_string.c
+  src/gfc_gc.c
   test/test_gfc_fs.c
 )
 

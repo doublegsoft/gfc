@@ -38,6 +38,7 @@
 #endif
 
 #include "gfc_fs.h"
+#include "gfc_string.h"
 
 void
 gfc_fs_iterate(const char* path, user_data data, void (*resolve)(const char*, user_data data))
@@ -236,4 +237,24 @@ gfc_fs_write(const char* path, const byte* content, size_t len)
   FILE* fp = fopen(path, "w");
   fwrite(content, sizeof(byte), len, fp);
   fclose(fp);
+}
+
+int
+gfc_fs_read(const char* path, gfc_string_p* str)
+{
+  FILE* fp = fopen(path, "r");
+  if (fp == NULL)
+  {
+    fprintf(stderr, "%s(%d) %s error: %d\n", __FILE__, __LINE__, "gfc_fs_read", GFC_ERROR_INIT);
+    return GFC_ERROR_INIT;
+  }
+
+  char buff[GFC_BUFFER_SIZE];
+  int len;
+  *str = gfc_string_new("");
+  while ((len = fread(buff, sizeof(char), GFC_BUFFER_SIZE, fp)) > 0)
+  {
+    gfc_string_concat(*str, buff);
+  }
+  return GFC_SUCCESS;
 }

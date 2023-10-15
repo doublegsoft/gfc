@@ -39,6 +39,7 @@ typedef unsigned long                   ulong;
 #define GFC_MAX_PATH                    8192
 
 #define GFC_SUCCESS                     0
+#define GFC_OK                          0
 
 #define GFC_ERROR_FILE_OPEN             0101
 #define GFC_ERROR_FILE_WRITE            0102
@@ -58,6 +59,8 @@ typedef unsigned long                   ulong;
 #define GFC_ERROR_IOCP_CREATE           0501
 
 #define GFC_ERROR_SYSINFO_GET           0601
+
+#define GFC_ERROR_INIT                  0001
 
 #ifndef NULL
 #define NULL                            0
