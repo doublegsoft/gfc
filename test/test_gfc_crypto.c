@@ -194,8 +194,8 @@ main()
   gfc_crypto_base64_decode((const byte*) encoded, strlen(encoded), (byte*)decoded);
   printf("decoded = %s\n", decoded);
 
-  const char* plaintext = "ganguo800717";
-  const char* cipher = "1234567890";
+  const char* plaintext = "ganguo";
+  const char* cipher = "01234567899876543210";
   byte ciphertext[1024];
 
   int ciphertext_length = gfc_crypto_des_ecb3_encrypt(plaintext, cipher, strlen(cipher), ciphertext);
