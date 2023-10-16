@@ -252,8 +252,9 @@ gfc_fs_read(const char* path, gfc_string_p* str)
   char buff[GFC_BUFFER_SIZE];
   int len;
   *str = gfc_string_new("");
-  while ((len = fread(buff, sizeof(char), GFC_BUFFER_SIZE, fp)) > 0)
+  while ((len = fread(buff, sizeof(char), GFC_BUFFER_SIZE - 1, fp)) > 0)
   {
+    buff[len] = '\0';
     gfc_string_concat(*str, buff);
   }
   return GFC_SUCCESS;
