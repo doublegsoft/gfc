@@ -33,19 +33,10 @@ project(gfc VERSION 1.0.0 DESCRIPTION "g foundation class")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_BSD_SOURCE -DGFC_USE_OPENSSL -Wno-format -Wno-deprecated-declarations")
 
-if (WIN32)
-	include_directories(
-		"include"
-	)
-else ()  
-	include_directories(
-		"/usr/local/include"
-		"include"
-	)
-endif(WIN32)
+option(WITH_GFC_JVM "gfc_jvm.c" ON)
 
-add_library(gfc STATIC
-  src/gfc_base64.c
+set(GFC_SOURCES 
+	src/gfc_base64.c
   src/gfc_crypto.c
   src/gfc_hex.c
   src/gfc_list.c
@@ -65,7 +56,27 @@ add_library(gfc STATIC
   src/gfc_gc.c
   src/gfc_fs.c
   src/gfc_cli.c
+  src/gfc_jvm.c
 )
+
+if (WIN32)
+	include_directories(
+		"include"
+	)
+else ()  
+	include_directories(
+		"/usr/local/include"
+		"include"
+	)
+	if(WITH_GFC_JVM)	
+		include_directories(
+			"/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/include"
+			"/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/include/darwin"
+		)
+	endif()
+endif(WIN32)
+
+add_library(gfc STATIC ${GFC_SOURCES})
 
 if (WIN32)
 	link_directories(
@@ -74,6 +85,17 @@ if (WIN32)
 	target_link_libraries(gfc PRIVATE
 	  libiconv.dll.a
 	)
+else()
+	if(WITH_GFC_JVM)	
+		link_directories(
+		"/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/jre/lib/server/"
+		"/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/jre/lib/jli/"
+		)
+		target_link_libraries(gfc PRIVATE
+		  jli
+		  jvm
+		)	
+	endif()
 endif (WIN32)
 
 add_executable(test_gfc_string
