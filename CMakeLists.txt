@@ -56,8 +56,11 @@ set(GFC_SOURCES
   src/gfc_gc.c
   src/gfc_fs.c
   src/gfc_cli.c
-  src/gfc_jvm.c
 )
+
+if(WITH_GFC_JVM)
+	list(APPEND GFC_SOURCES src/gfc_jvm.c)
+endif(WITH_GFC_JVM)
 
 if (WIN32)
 	include_directories(
