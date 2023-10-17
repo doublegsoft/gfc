@@ -44,6 +44,9 @@ typedef         gfc_map_t*         gfc_map_p;
 
 typedef int (*resovle)(char*, void*);
 
+typedef struct  gfc_map_element_s          gfc_map_element_t;
+typedef         gfc_map_element_t*         gfc_map_element_p;
+
 /* We need to keep keys and values */
 struct gfc_map_element_s
 {

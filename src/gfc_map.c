@@ -40,9 +40,6 @@
 #define INITIAL_SIZE (256)
 #define MAX_CHAIN_LENGTH (8)
 
-typedef struct  gfc_map_element_s          gfc_map_element_t;
-typedef         gfc_map_element_t*         gfc_map_element_p;
-
 /*
  * Return an empty hashmap, or NULL on failure.
  */
