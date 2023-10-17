@@ -18,26 +18,29 @@
 int
 gfc_jvm_run()
 {
-  JavaVM         *vm;
-  JNIEnv         *env;
-  JavaVMInitArgs  vm_args;
-  jint            res;
-  jclass          cls;
-  jmethodID       mid;
-  jstring         jstr;
-  jobjectArray    main_args;
+  JavaVM*           vm;
+  JNIEnv*           env;
+  JavaVMInitArgs    vm_args;
+  jint              res;
+  jclass            cls;
+  jmethodID         mid;
+  jstring           jstr;
+  jobjectArray      main_args;
 
-  vm_args.version  = JNI_VERSION_1_8;
-  vm_args.nOptions = 0;
+  JavaVMOption options[1];
+  options[0].optionString     = "-Djava.class.path=/Volumes/EXPORT/local/works/sdic.com/juno/03.Development/juno-boot/target/juno-boot-3.0.20231017.jar";
+  vm_args.options             = options;
+  vm_args.nOptions            = 1;
+  vm_args.version             = JNI_VERSION_1_8;
   res = JNI_CreateJavaVM(&vm, (void **)&env, &vm_args);
   if (res != JNI_OK) {
-    printf("Failed to create Java VMn");
+    printf("Failed to create Java VM\n");
     return 1;
   }
 
-  cls = (*env)->FindClass(env, "Main");
+  cls = (*env)->FindClass(env, "com/sdic/juno/Test");
   if (cls == NULL) {
-    printf("Failed to find Main classn");
+    printf("Failed to find Main class\n");
     return 1;
   }
 
@@ -47,9 +50,10 @@ gfc_jvm_run()
     return 1;
   }
 
-  jstr      = (*env)->NewStringUTF(env, "");
+  jstr      = (*env)->NewStringUTF(env, "hello");
   main_args = (*env)->NewObjectArray(env, 1, (*env)->FindClass(env, "java/lang/String"), jstr);
   (*env)->CallStaticVoidMethod(env, cls, mid, main_args);
 
+  fflush(stdout);
   return 0;
 }

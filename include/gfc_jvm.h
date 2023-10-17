@@ -19,6 +19,8 @@
 extern "C" {
 #endif
 
+int
+gfc_jvm_run();
 
 
 #ifdef  __cplusplus

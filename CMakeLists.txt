@@ -217,3 +217,12 @@ else (UNIX)
 	  /usr/local/lib/libcrypto.a
 	)
 endif (WIN32)
+
+if(WITH_GFC_JVM)	
+add_executable(test_gfc_jvm
+  test/test_gfc_jvm.c
+)
+target_link_libraries(test_gfc_jvm PRIVATE
+	gfc
+)
+endif(WITH_GFC_JVM)
