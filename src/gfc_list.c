@@ -187,3 +187,17 @@ gfc_list_free(gfc_list_p list)
   assert(GFC_GC_OK == rc);
   list = NULL;
 }
+
+GFC_API void
+gfc_list_deep_free(gfc_list_p list)
+{
+  int i;
+  int size = gfc_list_size(list);
+  for (i = 0; i < size; i++)
+  {
+    void* ptr = (void*)gfc_list_get(list, i);
+    gfc_gc_free(ptr);
+  }
+  gfc_list_free(list);
+}
+

@@ -107,11 +107,15 @@ add_executable(test_gfc_string
 	test/test_gfc_string.c
 )
 
-if (WIN32)
+target_link_libraries(test_gfc_string PRIVATE
+	gfc
+)	
+
+if(WIN32)
 	target_link_libraries(test_gfc_string PRIVATE
 	  libiconv.dll.a
 	)
-endif (WIN32)
+endif(WIN32)
 
 add_executable(test_gfc_map
 	src/gfc_map.c
@@ -119,6 +123,10 @@ add_executable(test_gfc_map
 	src/gfc_gc.c
 	test/test_gfc_map.c
 )
+
+target_link_libraries(test_gfc_map PRIVATE
+	gfc
+)	
 	
 if (WIN32)
 	target_link_libraries(test_gfc_map PRIVATE
@@ -187,11 +195,12 @@ else()
 endif (WIN32)
 
 add_executable(test_gfc_fs
-  src/gfc_fs.c
-  src/gfc_string.c
-  src/gfc_gc.c
   test/test_gfc_fs.c
 )
+
+target_link_libraries(test_gfc_fs PRIVATE
+	gfc
+)	
 
 add_executable(test_gfc_crypto
   src/gfc_crypto.c

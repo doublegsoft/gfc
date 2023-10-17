@@ -123,6 +123,19 @@ gfc_gc_close(void)
   free(gc_ctx);
 }
 
+GFC_API char*
+gfc_gc_dup(const char* str)
+{
+  if (str == NULL || strlen(str) == 0)
+    return NULL;
+  int len = strlen(str) + 1;
+
+  char* ret = gfc_gc_malloc(sizeof(char), len);
+  strcpy(ret, str);
+  ret[len - 1] = '\0';
+  return ret;
+}
+
 void*
 gfc_gc_malloc(size_t size, size_t len)
 {

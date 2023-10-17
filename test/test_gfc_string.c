@@ -70,5 +70,15 @@ main()
   printf("%lu bytes\n", gfc_gc_total());
   assert(gfc_gc_total() == 0);
 
+  char string[50] = "Hello! We are learning about strtok";
+  printf("splitting:\n");
+  gfc_list_p list = gfc_string_split(string, " ");
+
+  for (int i = 0; i < gfc_list_size(list); i++)
+  {
+    char* str = gfc_list_get(list, i);
+    printf("%s\n", str);
+  }
+  gfc_list_deep_free(list);
   return 0;
 }

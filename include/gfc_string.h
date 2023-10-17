@@ -30,6 +30,7 @@ extern "C"
 #include <string.h>
 
 #include "gfc_type.h"
+#include "gfc_list.h"
 
 #ifdef _WIN32
 #  ifdef _MSC_VER
@@ -92,6 +93,13 @@ gfc_string_concat(gfc_string_p str, const char* val);
 */
 GFC_API size_t
 gfc_string_length(gfc_string_p str);
+
+/*!
+** @brief
+** Splits the string into strings by separator.
+*/
+GFC_API gfc_list_p
+gfc_string_split(char* str, const char* sep);
 
 /*!
 ** @brief

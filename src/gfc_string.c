@@ -139,6 +139,19 @@ gfc_string_print(gfc_string_p str)
   printf("%s\n", str->buffer);
 }
 
+GFC_API gfc_list_p
+gfc_string_split(char* str, const char* sep)
+{
+  gfc_list_p ret = gfc_list_new();
+  char* token = strtok(str, sep);
+  while(token != NULL)
+  {
+    gfc_list_append(ret, gfc_gc_dup(token));
+    token = strtok(NULL, sep);
+  }
+  return ret;
+}
+
 /*！
 ** @brief
 ** Converts the source string to utf8 encoding string in destination string, especially in msvc

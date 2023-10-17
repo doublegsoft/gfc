@@ -132,4 +132,7 @@ gfc_list_clear(gfc_list_p list);
 GFC_API void
 gfc_list_free(gfc_list_p list);
 
+GFC_API void
+gfc_list_deep_free(gfc_list_p list);
+
 #endif // __GFC_LIST_H__

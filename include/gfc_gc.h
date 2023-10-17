@@ -35,6 +35,7 @@ extern "C"
 #endif
 
 #include <stdint.h>
+#include "gfc_type.h"
 
 #define GFC_GC_OK                               0
 #define GFC_GC_IS_NULL                          204
@@ -73,6 +74,9 @@ gfc_gc_free(void* ptr);
 */
 void*
 gfc_gc_malloc(size_t size, size_t len);
+
+GFC_API char*
+gfc_gc_dup(const char* str);
 
 /*!
 ** reallocates a new size block of memory to the pointer.
