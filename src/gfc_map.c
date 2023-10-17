@@ -43,23 +43,6 @@
 typedef struct  gfc_map_element_s          gfc_map_element_t;
 typedef         gfc_map_element_t*         gfc_map_element_p;
 
-/* We need to keep keys and values */
-struct gfc_map_element_s
-{
-  char key[1024];
-  int in_use;
-  user_data data;
-};
-
-/* A hashmap has some maximum size and current size,
- * as well as the data to hold. */
-struct gfc_map_s
-{
-  int table_size;
-  int size;
-  gfc_map_element_p data;
-};
-
 /*
  * Return an empty hashmap, or NULL on failure.
  */
