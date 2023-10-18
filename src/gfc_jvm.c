@@ -16,7 +16,7 @@
 #include "gfc_jvm.h"
 
 int
-gfc_jvm_run()
+gfc_jvm_main(const char* joptions, const char* clazz)
 {
   JavaVM*           vm;
   JNIEnv*           env;
@@ -28,7 +28,7 @@ gfc_jvm_run()
   jobjectArray      main_args;
 
   JavaVMOption options[1];
-  options[0].optionString     = "-Djava.class.path=/Volumes/EXPORT/local/works/sdic.com/juno/03.Development/juno-boot/target/juno-boot-3.0.20231017.jar";
+  options[0].optionString     = (char*) joptions;
   vm_args.options             = options;
   vm_args.nOptions            = 1;
   vm_args.version             = JNI_VERSION_1_8;
@@ -38,7 +38,7 @@ gfc_jvm_run()
     return 1;
   }
 
-  cls = (*env)->FindClass(env, "com/sdic/juno/Test");
+  cls = (*env)->FindClass(env, clazz);
   if (cls == NULL) {
     printf("Failed to find Main class\n");
     return 1;

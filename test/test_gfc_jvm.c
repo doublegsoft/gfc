@@ -34,6 +34,7 @@
 
 int main(int argc, char* argv[])
 {
-  gfc_jvm_run();
+  gfc_jvm_main("-Djava.class.path=/Volumes/EXPORT/local/works/sdic.com/juno/03.Development/juno-boot/target/juno-boot-3.0.20231017.jar",
+               "com/sdic/juno/Test");
   return 0;
 }

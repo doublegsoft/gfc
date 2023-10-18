@@ -20,7 +20,7 @@ extern "C" {
 #endif
 
 int
-gfc_jvm_run();
+gfc_jvm_main(const char* options, const char* clazz);
 
 
 #ifdef  __cplusplus
