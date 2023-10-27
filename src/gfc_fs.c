@@ -73,6 +73,8 @@ gfc_fs_iterate(const char* path, user_data data, void (*resolve)(const char*, us
   resolve(path, data);
 #else
   DIR* dir = opendir(path);
+  if (dir == NULL)
+    return;
   struct dirent* entry;
   while ((entry = readdir(dir)) != NULL)
   {
