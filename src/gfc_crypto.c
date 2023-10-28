@@ -26,10 +26,12 @@
 **
 ** @since 1.0
 */
+#ifdef GFC_USE_OPENSSL
 #include <openssl/des.h>
 #include <openssl/rsa.h>
 #include <openssl/aes.h>
 #include <openssl/pem.h>
+#endif
 
 #include "gfc_crypto.h"
 #include "gfc_type.h"
