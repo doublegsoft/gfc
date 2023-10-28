@@ -43,8 +43,8 @@
 void
 gfc_fs_iterate(const char* path, user_data data, void (*resolve)(const char*, user_data data))
 {
-  if (access(path, F_OK) != 0)
-    return;
+  // if (access(path, F_OK) != 0)
+  //   return;
 
   struct stat attrib;
   stat(path, &attrib);
@@ -54,40 +54,42 @@ gfc_fs_iterate(const char* path, user_data data, void (*resolve)(const char*, us
     resolve(path, data);
     return;
   }
-#ifdef WIN32
-  char subpath[2048];
-  strcpy(subpath, path);
-  strcat(subpath, "\\*");
-  WIN32_FIND_DATA findFileData;
-  HANDLE hFind = FindFirstFile(subpath, &findFileData);
-
-  do {
-    subpath[0] = '\0';
-    strcpy(subpath, path);
-    strcat(subpath, "/");
-    strcat(subpath, findFileData.cFileName);
-    gfc_fs_iterate(subpath, data, resolve);
-  } while (FindNextFile(hFind, &findFileData) != 0);
-  FindClose(hFind);
-
-  resolve(path, data);
-#else
-  DIR* dir = opendir(path);
-  if (dir == NULL)
-    return;
-  struct dirent* entry;
-  while ((entry = readdir(dir)) != NULL)
+  else if (S_ISDIR(attrib.st_mode))
   {
-    if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
-      continue;
-
+#ifdef WIN32
     char subpath[2048];
     strcpy(subpath, path);
-    strcat(subpath, "/");
-    strcat(subpath, entry->d_name);
-    gfc_fs_iterate(subpath, data, resolve);
+    strcat(subpath, "\\*");
+    WIN32_FIND_DATA findFileData;
+    HANDLE hFind = FindFirstFile(subpath, &findFileData);
+
+    do {
+      subpath[0] = '\0';
+      strcpy(subpath, path);
+      strcat(subpath, "/");
+      strcat(subpath, findFileData.cFileName);
+      gfc_fs_iterate(subpath, data, resolve);
+    } while (FindNextFile(hFind, &findFileData) != 0);
+    FindClose(hFind);
+
+    resolve(path, data);
+#else
+    DIR* dir = opendir(path);
+    if (dir == NULL) return;
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != NULL)
+    {
+      if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+        continue;
+
+      char subpath[2048];
+      strcpy(subpath, path);
+      strcat(subpath, "/");
+      strcat(subpath, entry->d_name);
+      gfc_fs_iterate(subpath, data, resolve);
+    }
+    closedir(dir);
   }
-  closedir(dir);
 
   resolve(path, data);
 #endif
