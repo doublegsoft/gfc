@@ -59,8 +59,9 @@
 GFC_API gfc_string_p
 gfc_string_new(const char* str)
 {
-  gfc_string_p ret = (gfc_string_p) gfc_gc_malloc(sizeof(gfc_string_p), 1);
   if (str == NULL) return NULL;
+
+  gfc_string_p ret = (gfc_string_p) gfc_gc_malloc(sizeof(gfc_string_p), 1);
   int len = strlen(str);
   if (len == 0)
     len = 1;

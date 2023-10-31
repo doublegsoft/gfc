@@ -38,6 +38,14 @@ main()
   gfc_gc_init();
   gfc_string_p str = gfc_string_new("anybody");
 
+  gfc_string_p s1 = gfc_string_new("s1");
+  gfc_string_p s2 = gfc_string_new("s2");
+  gfc_string_p s3 = gfc_string_new("s3");
+
+  gfc_string_free(s1);
+  gfc_string_free(s2);
+  gfc_string_free(s3);
+
   int i = 0;
   gfc_string_concat(str, " ");
   gfc_string_concat(str, "hello");
