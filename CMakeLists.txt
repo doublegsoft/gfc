@@ -76,10 +76,10 @@ endif(WITH_GFC_CRYPTO)
 ##
 ####################
 if(UNIX)
-  link_directories(test_gfc_crypto PRIVATE
+  link_directories(
 	  /opt/local/lib
 	)
-endif(APPLE)
+endif(UNIX)
 
 ####################
 ##
@@ -110,7 +110,7 @@ if (WIN32)
 	link_directories(
 		"/opt/local/x86_64-w64-mingw32/lib"
 	)
-	target_link_libraries(gfc
+	target_link_libraries(gfc PRIVATE
 	  libiconv.dll.a
 	)
 else()
@@ -119,7 +119,7 @@ else()
 		"/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/jre/lib/server/"
 		"/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/jre/lib/jli/"
 		)
-		target_link_libraries(gfc
+		target_link_libraries(gfc PRIVATE
 		  jli
 		  jvm
 		)	
