@@ -34,10 +34,10 @@ project(gfc VERSION 1.0.0 DESCRIPTION "g foundation class")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_BSD_SOURCE -DGFC_USE_OPENSSL -Wno-format -Wno-deprecated-declarations")
 
 option(WITH_GFC_JVM "gfc_jvm.c" ON)
+option(WITH_GFC_CRYPTO "gfc_crypto.c" ON)
 
 set(GFC_SOURCES 
 	src/gfc_base64.c
-  src/gfc_crypto.c
   src/gfc_hex.c
   src/gfc_list.c
   src/gfc_log.c
@@ -58,10 +58,34 @@ set(GFC_SOURCES
   src/gfc_cli.c
 )
 
+####################
+##
+## WITH OPTIONS
+##
+####################
 if(WITH_GFC_JVM)
 	list(APPEND GFC_SOURCES src/gfc_jvm.c)
 endif(WITH_GFC_JVM)
+if(WITH_GFC_CRYPTO)
+	list(APPEND GFC_SOURCES src/gfc_crypto.c)
+endif(WITH_GFC_CRYPTO)
 
+####################
+##
+## LINK
+##
+####################
+if(UNIX)
+  link_directories(test_gfc_crypto PRIVATE
+	  /opt/local/lib
+	)
+endif(APPLE)
+
+####################
+##
+## INCLUDE
+##
+####################
 if (WIN32)
 	include_directories(
 		"include"
@@ -69,6 +93,7 @@ if (WIN32)
 else ()  
 	include_directories(
 		"/usr/local/include"
+		"/opt/local/include"
 		"include"
 	)
 	if(WITH_GFC_JVM)	
@@ -85,7 +110,7 @@ if (WIN32)
 	link_directories(
 		"/opt/local/x86_64-w64-mingw32/lib"
 	)
-	target_link_libraries(gfc PRIVATE
+	target_link_libraries(gfc
 	  libiconv.dll.a
 	)
 else()
@@ -94,7 +119,7 @@ else()
 		"/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/jre/lib/server/"
 		"/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/jre/lib/jli/"
 		)
-		target_link_libraries(gfc PRIVATE
+		target_link_libraries(gfc
 		  jli
 		  jvm
 		)	
@@ -202,6 +227,7 @@ target_link_libraries(test_gfc_fs PRIVATE
 	gfc
 )	
 
+if(WITH_GFC_CRYPTO)
 add_executable(test_gfc_crypto
   src/gfc_crypto.c
   src/gfc_hex.c
@@ -213,10 +239,12 @@ if (WIN32)
 	  libcrypto.a
 	)
 else (UNIX)
+	
 	target_link_libraries(test_gfc_crypto PRIVATE
-	  /usr/local/lib/libcrypto.a
+	  crypto
 	)
 endif (WIN32)
+endif(WITH_GFC_CRYPTO)
 
 if(WITH_GFC_JVM)	
 add_executable(test_gfc_jvm
