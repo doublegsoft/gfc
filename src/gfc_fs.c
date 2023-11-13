@@ -41,7 +41,7 @@
 #include "gfc_string.h"
 
 void
-gfc_fs_iterate(const char* path, user_data data, void (*resolve)(const char*, user_data data))
+gfc_fs_iterate(const char* path, user_data data, void (*resolve)(const char*, user_data))
 {
   // if (access(path, F_OK) != 0)
   //   return;
@@ -71,8 +71,6 @@ gfc_fs_iterate(const char* path, user_data data, void (*resolve)(const char*, us
       gfc_fs_iterate(subpath, data, resolve);
     } while (FindNextFile(hFind, &findFileData) != 0);
     FindClose(hFind);
-
-    resolve(path, data);
 #else
     DIR* dir = opendir(path);
     if (dir == NULL) return;
@@ -89,13 +87,12 @@ gfc_fs_iterate(const char* path, user_data data, void (*resolve)(const char*, us
       gfc_fs_iterate(subpath, data, resolve);
     }
     closedir(dir);
-  }
-
-  resolve(path, data);
 #endif
+  }
+  resolve(path, data);
 }
 
-static void
+void
 gfc_fs_rm_(const char* path, user_data data)
 {
   /*!
@@ -117,7 +114,6 @@ gfc_fs_rm_(const char* path, user_data data)
     rmdir(path);
 #endif
   }
-
 }
 
 void
@@ -134,7 +130,7 @@ struct gfc_fs_mv_s
   char* dst;
 };
 
-static void
+void
 gfc_fs_mv_(const char* path, user_data data)
 {
   struct gfc_fs_mv_s* ctx = (struct gfc_fs_mv_s*) data;
@@ -236,7 +232,7 @@ gfc_fs_touch(const char* path)
 }
 
 void
-gfc_fs_write(const char* path, const byte* content, size_t len)
+gfc_fs_write(const char* path, const byte* content, ulong len)
 {
   FILE* fp = fopen(path, "w");
   fwrite(content, sizeof(byte), len, fp);
