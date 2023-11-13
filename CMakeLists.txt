@@ -106,27 +106,30 @@ else ()
 	endif()
 endif(WIN32)
 
-add_library(gfc STATIC ${GFC_SOURCES})
+add_library(gfc-static STATIC ${GFC_SOURCES})
+add_library(gfc SHARED ${GFC_SOURCES})
 
 if (WIN32)
 	link_directories(
 		"/opt/local/x86_64-w64-mingw32/lib"
 	)
 	target_link_libraries(gfc PRIVATE
-	  libiconv.dll.a
+	  libiconv.dll
+	  crypto.dll
+	  ws2_32
+	  Rpcrt4
 	)
 else()
 	if(WITH_GFC_JVM)	
-		link_directories(
-		"/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/jre/lib/server/"
-		"/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/jre/lib/jli/"
-		)
 		target_link_libraries(gfc PRIVATE
-		  jli
-		  jvm
+		  "/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/jre/lib/jli/libjli.dylib"
+		  "/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/jre/lib/server/libjvm.dylib"
 		)	
-	endif()
-endif (WIN32)
+	endif(WITH_GFC_JVM)
+	target_link_libraries(gfc PRIVATE 
+		crypto
+	)
+endif(WIN32)
 
 add_executable(test_gfc_string
 	src/gfc_string.c
@@ -222,6 +225,7 @@ else()
 endif (WIN32)
 
 add_executable(test_gfc_fs
+	src/gfc_fs.c
   test/test_gfc_fs.c
 )
 
