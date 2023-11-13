@@ -64,7 +64,9 @@ set(GFC_SOURCES
 ##
 ####################
 if(WITH_GFC_JVM)
-	list(APPEND GFC_SOURCES src/gfc_jvm.c)
+	if (APPLE)
+		list(APPEND GFC_SOURCES src/gfc_jvm.c)
+	endif (APPLE)
 endif(WITH_GFC_JVM)
 if(WITH_GFC_CRYPTO)
 	list(APPEND GFC_SOURCES src/gfc_crypto.c)
@@ -236,7 +238,7 @@ add_executable(test_gfc_crypto
 
 if (WIN32)
 	target_link_libraries(test_gfc_crypto PRIVATE
-	  libcrypto.a
+	  libcrypto.dll.a
 	)
 else (UNIX)
 	
@@ -247,10 +249,12 @@ endif (WIN32)
 endif(WITH_GFC_CRYPTO)
 
 if(WITH_GFC_JVM)	
+	if(APPLE)
 add_executable(test_gfc_jvm
   test/test_gfc_jvm.c
 )
 target_link_libraries(test_gfc_jvm PRIVATE
 	gfc
 )
+	endif (APPLE)
 endif(WITH_GFC_JVM)
