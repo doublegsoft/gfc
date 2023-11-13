@@ -36,7 +36,7 @@ extern "C"
 
 #include "gfc_type.h"
 
-void
+GFC_API void
 gfc_cli_progress(const char* label, int value, int total);
 
 #ifdef __cplusplus

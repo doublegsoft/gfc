@@ -45,34 +45,34 @@ extern "C"
 /*!
 ** initializes gc context.
 */
-void
+GFC_API void
 gfc_gc_init(void);
 
 /*!
 ** closes and free gc context.
 */
-void
+GFC_API void
 gfc_gc_close(void);
 
 /*!
 ** gets total byte size which is managed by gc context.
 */
-size_t
+GFC_API size_t
 gfc_gc_total(void);
 
-size_t
+GFC_API size_t
 gfc_gc_length(void);
 
 /*!
 ** free memory which the ptr points to.
 */
-int
+GFC_API int
 gfc_gc_free(void* ptr);
 
 /*!
 ** allocates a block of memory.
 */
-void*
+GFC_API void*
 gfc_gc_malloc(size_t size, size_t len);
 
 GFC_API char*

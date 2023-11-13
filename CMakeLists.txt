@@ -106,16 +106,15 @@ else ()
 	endif()
 endif(WIN32)
 
-add_library(gfc-static STATIC ${GFC_SOURCES})
-add_library(gfc SHARED ${GFC_SOURCES})
+add_library(gfc STATIC ${GFC_SOURCES})
 
 if (WIN32)
 	link_directories(
 		"/opt/local/x86_64-w64-mingw32/lib"
 	)
 	target_link_libraries(gfc PRIVATE
-	  libiconv.dll
-	  crypto.dll
+	  libiconv
+	  crypto
 	  ws2_32
 	  Rpcrt4
 	)

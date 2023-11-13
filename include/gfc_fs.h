@@ -37,28 +37,28 @@ extern "C"
 #include "gfc_type.h"
 #include "gfc_string.h"
 
-void
+GFC_API void
 gfc_fs_mv(const char* src, const char* dst);
 
-void
+GFC_API void
 gfc_fs_rm(const char* path);
 
-void
+GFC_API void
 gfc_fs_mkdirs(const char* path);
 
 /*!
 ** Creates a file with specific path.
 */
-void
+GFC_API void
 gfc_fs_touch(const char* path);
 
-void
+GFC_API void
 gfc_fs_iterate(const char* path, user_data data, void (*resolve)(const char*, user_data));
 
-void
+GFC_API void
 gfc_fs_write(const char* path, const byte* content, ulong len);
 
-int
+GFC_API int
 gfc_fs_read(const char* path, gfc_string_p* str);
 
 #ifdef __cplusplus
