@@ -107,13 +107,21 @@ else ()
 endif(WIN32)
 
 add_library(gfc STATIC ${GFC_SOURCES})
+add_library(gfc_shared SHARED ${GFC_SOURCES})
+set_target_properties(gfc_shared PROPERTIES OUTPUT_NAME gfc)
 
 if (WIN32)
 	link_directories(
 		"/opt/local/x86_64-w64-mingw32/lib"
 	)
 	target_link_libraries(gfc PRIVATE
-	  libiconv
+	  iconv
+	  crypto
+	  ws2_32
+	  Rpcrt4
+	)
+	target_link_libraries(gfc_shared PRIVATE
+	  iconv
 	  crypto
 	  ws2_32
 	  Rpcrt4
@@ -124,8 +132,15 @@ else()
 		  "/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/jre/lib/jli/libjli.dylib"
 		  "/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/jre/lib/server/libjvm.dylib"
 		)	
+		target_link_libraries(gfc_shared PRIVATE
+		  "/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/jre/lib/jli/libjli.dylib"
+		  "/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/jre/lib/server/libjvm.dylib"
+		)	
 	endif(WITH_GFC_JVM)
 	target_link_libraries(gfc PRIVATE 
+		crypto
+	)
+	target_link_libraries(gfc_shared PRIVATE 
 		crypto
 	)
 endif(WIN32)
