@@ -55,7 +55,7 @@ const char* params[] = {
 
 int main(int argc, char* argv[])
 {
-  gfc_jvm_main("-Djava.class.path=../../testdata/protosys-plugin-modelbase-4.5-shaded.jar",
+  gfc_jvm_main("-Djava.class.path=/Volumes/EXPORT/opt/modelbase-studio-4.0/lib/protosys-plugin-modelbase-4.5-shaded.jar",
       "org/doublegsoft/protosys/modelbase/ModelbasePlugin", 5, params);
   return 0;
 }
