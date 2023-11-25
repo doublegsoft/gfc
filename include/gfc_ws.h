@@ -39,6 +39,10 @@ extern "C"
 
 #include "gfc_type.h"
 
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL 0
+#endif
+
 #define GFC_WS_OK                         0
 
 #define FRM_TXT                           1
