@@ -16,7 +16,7 @@
 #include "gfc_jvm.h"
 
 int
-gfc_jvm_main(const char* joptions, const char* clazz)
+gfc_jvm_main(const char* joptions, const char* clazz, int argc, const char* argv[])
 {
   JavaVM*           vm;
   JNIEnv*           env;
@@ -50,8 +50,16 @@ gfc_jvm_main(const char* joptions, const char* clazz)
     return 1;
   }
 
+  int argidx = 0;
   jstr      = (*env)->NewStringUTF(env, "hello");
-  main_args = (*env)->NewObjectArray(env, 1, (*env)->FindClass(env, "java/lang/String"), jstr);
+  main_args = (*env)->NewObjectArray(env, argc, (*env)->FindClass(env, "java/lang/String"), jstr);
+
+  for (argidx = 0; argidx < argc; argidx++)
+  {
+    jstring str = (*env)->NewStringUTF(env, argv[argidx]);
+    (*env)->SetObjectArrayElement(env, main_args, argidx, str);
+  }
+
   (*env)->CallStaticVoidMethod(env, cls, mid, main_args);
 
   fflush(stdout);

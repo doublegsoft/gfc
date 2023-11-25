@@ -1,0 +1,128 @@
+@name(label='业务表格', singular='business_spreadsheet', plural='business_spreadsheets')
+@persistence(name='tn_smb_bizss')
+@entity
+business_spreadsheet<
+  
+  @name(label='标识')
+  @persistence(name='bizssid')
+  id!!: id,
+
+  @name(label='名称')
+  @persistence(name='bbizssnm')
+  name: string(100),
+
+  @name(label='附件')
+  @persistence(name='att')
+  attachment: json,
+
+  @name(label='备注')
+  @persistence(name='nt')
+  note: string(2000),
+
+  @persistence(name='modid', text='修改者标识')
+  @reference(value='id', name='modifier')
+  modifier_id: string(64),
+
+  @persistence(name='modtyp', text='修改者类型')
+  @reference(value='type', name='modifier')
+  modifier_type: string(64),
+
+  @persistence(name='sta', text='系统状态')
+  state: state,
+
+  @persistence(name='lmt', text='最近修改时间')
+  last_modified_time: now
+>
+
+@name(label='业务表格字段', singular='business_spreadsheet_column', plural='business_spreadsheet_columns')
+@persistence(name='tn_smb_bizsscol')
+@entity
+business_spreadsheet_column<
+  
+  @name(label='标识')
+  @persistence(name='bizsscolid')
+  id!!: id,
+  
+  @name(label='业务表格')
+  @persistence(name='bizssid')
+  business_spreadsheet: &business_spreadsheet(id),
+
+  @name(label='名称')
+  @persistence(name='bizsscolnm')
+  name!: string(100)
+
+>
+
+@name(label='业务表格单元', singular='business_spreadsheet_cell', plural='business_spreadsheet_cells')
+@persistence(name='tn_smb_bizsscll')
+@value
+business_spreadsheet_cell<
+  
+  @name(label='业务表格')
+  @persistence(name='bizssid')
+  business_spreadsheet!!: &business_spreadsheet(id),
+
+  @name(label='业务表格字段')
+  @persistence(name='bizssid')
+  business_spreadsheet_column!!: &business_spreadsheet_column(id),
+  
+  @name(label='行序号')
+  @persistence(name='ridx')
+  row_index: integer,
+
+  @name(label='值')
+  @persistence(name='val')
+  value: string(1000)
+>
+
+@name(label='业务占位对象', singular='business_placeholder', plural='business_placeholders')
+@persistence(name='tn_smb_bizph')
+@entity
+business_placeholder<
+  
+  @name(label='标识')
+  @persistence(name='bizphid')
+  id!!: id,
+
+  @name(label='字符串')
+  @persistence(name='phstr')
+  placeholder_string: date,
+
+  @name(label='日期')
+  @persistence(name='phdt')
+  placeholder_date: date,
+
+  @name(label='时间')
+  @persistence(name='phtm')
+  placeholder_time: time,
+
+  @name(label='枚举')
+  @persistence(name='phenm')
+  placeholder_enum: enum[01:正常,99:异常],
+
+  @name(label='布尔')
+  @persistence(name='phbl')
+  placeholder_bool: bool,
+
+  @name(label='文本')
+  @persistence(name='phtxt')
+  placeholder_text: text,
+
+  @name(label='JSON')
+  @persistence(name='phjsn')
+  placeholder_json: json,
+  
+  @persistence(name='modid', text='修改者标识')
+  @reference(value='id', name='modifier')
+  modifier_id: string(64),
+
+  @persistence(name='modtyp', text='修改者类型')
+  @reference(value='type', name='modifier')
+  modifier_type: string(64),
+
+  @persistence(name='sta', text='系统状态')
+  state: state,
+
+  @persistence(name='lmt', text='最近修改时间')
+  last_modified_time: now
+>
