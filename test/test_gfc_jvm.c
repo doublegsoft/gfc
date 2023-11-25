@@ -32,9 +32,30 @@
 
 #include "gfc.h"
 
+const char* params[] = {
+  "--model=../../testdata/jvm_test.modelbase",
+  "--license=../../testdata/LICENSE",
+  "--output-root=/Users/christian/Downloads/test_jvm",
+  "--template-root=/Volumes/EXPORT/opt/modelbase-studio-4.0/data/archetypes/APPBASE+KUI@STDBIZ-2.0/java-appbase+model-2.0",
+  "--globals={"
+  "\"parentApplication\":\"$PARAPP\","
+  "\"application\":\"jvm\","
+  "\"namespace\":\"hello.jvm\","
+  "\"artifact\":\"hello-jvm\","
+  "\"version\":\"1.0.0\","
+  "\"description\":\"应用程序描述\","
+  "\"naming\":\"com.doublegsoft.jcommons.programming.java.JavaConventions\","
+  "\"language\":\"java\","
+  "\"imports\":"
+  "[],"
+  "\"dependencies\":"
+  "[]"
+  "}",
+};
+
 int main(int argc, char* argv[])
 {
-  gfc_jvm_main("-Djava.class.path=/Volumes/EXPORT/local/works/sdic.com/juno/03.Development/juno-boot/target/juno-boot-3.0.20231017.jar",
-               "com/sdic/juno/Test");
+  gfc_jvm_main("-Djava.class.path=../../testdata/protosys-plugin-modelbase-4.5-shaded.jar",
+      "org/doublegsoft/protosys/modelbase/ModelbasePlugin", 5, params);
   return 0;
 }
