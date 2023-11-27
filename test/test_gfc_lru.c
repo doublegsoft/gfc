@@ -28,19 +28,46 @@
 */
 #include <gfc.h>
 
+#define COUNT     100
+
 int main()
 {
   gfc_gc_init();
   gfc_lru_p lru = gfc_lru_new(1000, 1000);
-  gfc_lru_set(lru, (void*)"hello", 5, "world", 5);
 
-  void* val;
-  gfc_lru_get(lru, "hello", 5, &val);
+  char* keys[100];
+  char* vals[100];
+  for (int i = 0; i < COUNT; i++)
+  {
+    keys[i] = malloc(1024);
+    sprintf(keys[i], "hello-%03d", i);
+    vals[i] = malloc(1024);
+    sprintf(vals[i], "hello-%03d", i);
 
-  printf("hello = %s\n", (char*) val);
+    gfc_lru_set(lru, (void*)keys[i], strlen(keys[i]), vals[i], strlen(vals[i]));
+  }
 
+  // remove unexisting key twice
   gfc_lru_remove(lru, (void*)"hello", 5);
   gfc_lru_remove(lru, (void*)"hello", 5);
+
+  char* key = "hello-050";
+  char* val;
+  gfc_lru_get(lru, key, strlen(key), &val);
+  printf("found %s = %s\n", key, val);
+
+  key = "hello-040";
+  gfc_lru_remove(lru, (void*)key, strlen(key));
+  gfc_lru_get(lru, key, strlen(key), (void**)&val);
+  printf("found %s = %s\n", key, val);
+  gfc_lru_get(lru, key, strlen(key), (void**)&val);
+  printf("found %s = %s\n", key, val);
+
+  gfc_lru_set(lru, (void*)keys[40], strlen(keys[40]), vals[40], strlen(vals[40]));
+  gfc_lru_set(lru, (void*)keys[40], strlen(keys[40]), vals[40], strlen(vals[40]));
+  gfc_lru_get(lru, key, strlen(key), (void**)&val);
+  printf("found %s = %s\n", key, val);
+
 
   gfc_lru_free(lru);
   return 0;
