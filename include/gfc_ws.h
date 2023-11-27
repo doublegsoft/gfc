@@ -39,8 +39,10 @@ extern "C"
 
 #include "gfc_type.h"
 
+#ifdef __APPLE__
 #ifndef MSG_NOSIGNAL
 #define MSG_NOSIGNAL 0
+#endif
 #endif
 
 #define GFC_WS_OK                         0
