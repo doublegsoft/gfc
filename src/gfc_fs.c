@@ -43,9 +43,6 @@
 void
 gfc_fs_iterate(const char* path, user_data data, void (*resolve)(const char*, user_data))
 {
-  // if (access(path, F_OK) != 0)
-  //   return;
-
   struct stat attrib;
   stat(path, &attrib);
 
@@ -56,22 +53,6 @@ gfc_fs_iterate(const char* path, user_data data, void (*resolve)(const char*, us
   }
   else if (S_ISDIR(attrib.st_mode))
   {
-//#ifdef WIN32
-//    char subpath[2048];
-//    strcpy(subpath, path);
-//    strcat(subpath, "\\*");
-//    WIN32_FIND_DATA findFileData;
-//    HANDLE hFind = FindFirstFile(subpath, &findFileData);
-//
-//    do {
-//      subpath[0] = '\0';
-//      strcpy(subpath, path);
-//      strcat(subpath, "/");
-//      strcat(subpath, findFileData.cFileName);
-//      gfc_fs_iterate(subpath, data, resolve);
-//    } while (FindNextFile(hFind, &findFileData) != 0);
-//    FindClose(hFind);
-//#else
     DIR* dir = opendir(path);
     if (dir == NULL) return;
     struct dirent* entry;
@@ -87,7 +68,6 @@ gfc_fs_iterate(const char* path, user_data data, void (*resolve)(const char*, us
       gfc_fs_iterate(subpath, data, resolve);
     }
     closedir(dir);
-//#endif
   }
   resolve(path, data);
 }
@@ -102,11 +82,20 @@ gfc_fs_rm_(const char* path, user_data data)
     remove(path);
   else if (S_ISDIR(attrib.st_mode))
   {
-//#ifdef WIN32
-//    RemoveDirectory(path);
-//#else
+    DIR* dir = opendir(path);
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != NULL)
+    {
+      if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+        continue;
+      char subpath[2048];
+      strcpy(subpath, path);
+      strcat(subpath, "/");
+      strcat(subpath, entry->d_name);
+      gfc_fs_rm_(subpath, data);
+    }
+    closedir(dir);
     rmdir(path);
-//#endif
   }
 }
 
@@ -116,7 +105,8 @@ gfc_fs_rm(const char* path)
   struct stat info;
   if (stat(path, &info) != 0)
     return;
-  gfc_fs_iterate(path, NULL, gfc_fs_rm_);
+//  gfc_fs_iterate(path, NULL, gfc_fs_rm_);
+  gfc_fs_rm_(path, NULL);
 }
 
 struct gfc_fs_mv_s
