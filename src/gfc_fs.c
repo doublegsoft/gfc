@@ -56,22 +56,22 @@ gfc_fs_iterate(const char* path, user_data data, void (*resolve)(const char*, us
   }
   else if (S_ISDIR(attrib.st_mode))
   {
-#ifdef WIN32
-    char subpath[2048];
-    strcpy(subpath, path);
-    strcat(subpath, "\\*");
-    WIN32_FIND_DATA findFileData;
-    HANDLE hFind = FindFirstFile(subpath, &findFileData);
-
-    do {
-      subpath[0] = '\0';
-      strcpy(subpath, path);
-      strcat(subpath, "/");
-      strcat(subpath, findFileData.cFileName);
-      gfc_fs_iterate(subpath, data, resolve);
-    } while (FindNextFile(hFind, &findFileData) != 0);
-    FindClose(hFind);
-#else
+//#ifdef WIN32
+//    char subpath[2048];
+//    strcpy(subpath, path);
+//    strcat(subpath, "\\*");
+//    WIN32_FIND_DATA findFileData;
+//    HANDLE hFind = FindFirstFile(subpath, &findFileData);
+//
+//    do {
+//      subpath[0] = '\0';
+//      strcpy(subpath, path);
+//      strcat(subpath, "/");
+//      strcat(subpath, findFileData.cFileName);
+//      gfc_fs_iterate(subpath, data, resolve);
+//    } while (FindNextFile(hFind, &findFileData) != 0);
+//    FindClose(hFind);
+//#else
     DIR* dir = opendir(path);
     if (dir == NULL) return;
     struct dirent* entry;
@@ -87,7 +87,7 @@ gfc_fs_iterate(const char* path, user_data data, void (*resolve)(const char*, us
       gfc_fs_iterate(subpath, data, resolve);
     }
     closedir(dir);
-#endif
+//#endif
   }
   resolve(path, data);
 }
@@ -95,12 +95,6 @@ gfc_fs_iterate(const char* path, user_data data, void (*resolve)(const char*, us
 void
 gfc_fs_rm_(const char* path, user_data data)
 {
-  /*!
-  ** non-existing
-  */
-  if (access(path, F_OK) != 0)
-    return;
-
   struct stat attrib;
   stat(path, &attrib);
 
@@ -108,18 +102,19 @@ gfc_fs_rm_(const char* path, user_data data)
     remove(path);
   else if (S_ISDIR(attrib.st_mode))
   {
-#ifdef WIN32
-    RemoveDirectory(path);
-#else
+//#ifdef WIN32
+//    RemoveDirectory(path);
+//#else
     rmdir(path);
-#endif
+//#endif
   }
 }
 
 void
 gfc_fs_rm(const char* path)
 {
-  if (access(path, F_OK) != 0)
+  struct stat info;
+  if (stat(path, &info) != 0)
     return;
   gfc_fs_iterate(path, NULL, gfc_fs_rm_);
 }
@@ -134,12 +129,6 @@ void
 gfc_fs_mv_(const char* path, user_data data)
 {
   struct gfc_fs_mv_s* ctx = (struct gfc_fs_mv_s*) data;
-
-  /*!
-  ** not existing
-  */
-  if (access(path, F_OK) != 0)
-    return;
 
   struct stat attrib;
   stat(path, &attrib);
@@ -188,7 +177,8 @@ gfc_fs_mv(const char* src, const char* dst)
 void
 gfc_fs_mkdirs(const char* path)
 {
-  if (access(path, F_OK) == 0)
+  struct stat info;
+  if (stat(path, &info) == 0)
     return;
 
   char subpath[4096] = {'\0'};
