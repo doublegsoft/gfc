@@ -46,6 +46,7 @@ set(GFC_SOURCES
   src/gfc_ring.c
   src/gfc_sha1.c
   src/gfc_string.c
+  src/gfc_bignum.c
   src/gfc_tcp.c
   src/gfc_utf8.c
   src/gfc_uuid.c
