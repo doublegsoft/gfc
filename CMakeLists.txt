@@ -277,3 +277,11 @@ target_link_libraries(test_gfc_jvm PRIVATE
 )
 	endif (APPLE)
 endif(WITH_GFC_JVM)
+
+add_executable(test_gfc_cli
+  test/test_gfc_cli.c
+)
+
+target_link_libraries(test_gfc_cli PRIVATE
+	gfc
+)	
