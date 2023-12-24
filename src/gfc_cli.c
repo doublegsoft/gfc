@@ -51,11 +51,15 @@ gfc_cli_progress(const char* label, int progress, int total)
   //set green text color, only on Windows
   SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_GREEN);
 #endif
-  printf( "%s[", label );
+  printf( "%s[", label);
 
   for ( int i = 0; i < pos; i++ )  printf("%c", '=');
-  printf( "% *c", width - pos + 1, ']' );
-  printf( " %3d%%\r", percent );
+  printf( "% *c", width - pos + 1, ']');
+  if (progress < total)
+    printf(" %3d%%\r", percent);
+  else
+    printf(" 100%%\n");
+
   fflush(stdout);
 
 #ifdef WIN32
