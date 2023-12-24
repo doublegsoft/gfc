@@ -26,44 +26,17 @@
 ** You should have received a copy of the GNU General Public License
 ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include <stdio.h>
-#include <string.h>
-#ifdef WIN32
-#include <windows.h>
-#endif
+#include <unistd.h>
 #include "gfc_cli.h"
 
-
-void
-gfc_cli_progress(const char* label, int progress, int total)
+int
+main(int argc, char* argv[])
 {
-  //progress width
-  const int pwidth = 72;
 
-  //minus label len
-  int width = pwidth - strlen( label );
-  int pos = ( progress * width ) / total ;
-
-
-  int percent = ( progress * 100 ) / total;
-
-#ifdef WIN32
-  //set green text color, only on Windows
-  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_GREEN);
-#endif
-  printf( "%s[", label);
-
-  for ( int i = 0; i < pos; i++ )  printf("%c", '=');
-  printf( "% *c", width - pos + 1, ']');
-  if (progress < total)
-    printf(" %3d%%\r", percent);
-  else
-    printf(" 100%%\n");
-
-  fflush(stdout);
-
-#ifdef WIN32
-  //reset text color, only on Windows
-  SetConsoleTextAttribute(GetStdHandle( STD_OUTPUT_HANDLE ), 0x08);
-#endif
+  for (int i = 0; i < 11; i++)
+  {
+    gfc_cli_progress("hello", i * 10, 100);
+    sleep(1);
+  }
+  return 0;
 }
