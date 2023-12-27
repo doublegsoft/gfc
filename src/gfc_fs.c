@@ -161,7 +161,42 @@ gfc_fs_mv(const char* src, const char* dst)
   ctx.src = (char*) src;
   ctx.dst = (char*) dst;
 
-  gfc_fs_iterate(src, &ctx, gfc_fs_mv_);
+  struct stat stat_src;
+  struct stat stat_dst;
+
+  // Use stat() to get information about the file
+  if (stat(src, &stat_src) == 0)
+  {
+    if (S_ISREG(stat_src.st_mode))
+    {
+      char dir[2048];
+      char fn[1024];
+      strcpy(dir, src);
+      char* last = strrchr(dir, '/');
+      if (last != NULL)
+      {
+        *last = '\0';
+        last++;
+        strcpy(fn, last);
+      }
+      stat(dst, &stat_dst);
+      if (S_ISDIR(stat_dst.st_mode))
+      {
+        struct gfc_fs_mv_s ctx;
+        ctx.dst = (char*)dst;
+        ctx.src = (char*)dir;
+        gfc_fs_mv_(src, (user_data)&ctx);
+      }
+      else if (S_ISREG(stat_dst.st_mode))
+      {
+        // TODO: OVERWRITE FILE
+      }
+    }
+    else
+    {
+      gfc_fs_iterate(src, &ctx, gfc_fs_mv_);
+    }
+  }
 }
 
 void
