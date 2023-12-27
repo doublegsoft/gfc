@@ -52,10 +52,16 @@ int
 gfc_date_now(char* buff);
 
 int
+gfc_date_compactday(char* buff);
+
+int
 gfc_date_add(char* buff, time_t raw, int secs);
 
 void
 gfc_date_stringify(char* buff, struct tm* timeinfo, gfc_date_field_e field);
+
+void
+gfc_date_compact(char* buff, struct tm* timeinfo, gfc_date_field_e field);
 
 #ifdef __cplusplus
 }

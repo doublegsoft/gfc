@@ -66,6 +66,40 @@ gfc_date_stringify(char* buff, struct tm* timeinfo, gfc_date_field_e field)
   }
 }
 
+void
+gfc_date_compact(char* buff, struct tm* timeinfo, gfc_date_field_e field)
+{
+  int year = timeinfo->tm_year + 1900;
+  int month = timeinfo->tm_mon + 1;
+  int day = timeinfo->tm_mday;
+  int hour = timeinfo->tm_hour;
+  int min = timeinfo->tm_min;
+  int sec = timeinfo->tm_sec;
+  switch (field)
+  {
+    case YEAR:
+      sprintf(buff, "%d", year);
+      break;
+    case MONTH:
+      sprintf(buff, "%d%02d", year, month);
+      break;
+    case DAY:
+      sprintf(buff, "%d%02d%02d", year, month, day);
+      break;
+    case HOUR:
+      sprintf(buff, "%d%02d%02d%02d", year, month, day, hour);
+      break;
+    case MINUTE:
+      sprintf(buff, "%d%02d%02d%02d%02d", year, month, day, hour, min);
+      break;
+    case SECOND:
+      sprintf(buff, "%d%02d%02d%02d%02d%02d", year, month, day, hour, min, sec);
+      break;
+    default:
+      break;
+  }
+}
+
 int
 gfc_date_now(char* buff)
 {
@@ -76,6 +110,20 @@ gfc_date_now(char* buff)
   timeinfo = localtime (&rawtime);
 
   gfc_date_stringify(buff, timeinfo, SECOND);
+
+  return GFC_SUCCESS;
+}
+
+int
+gfc_date_compactday(char* buff)
+{
+  time_t rawtime;
+  struct tm* timeinfo;
+
+  time (&rawtime);
+  timeinfo = localtime (&rawtime);
+
+  gfc_date_compact(buff, timeinfo, DAY);
 
   return GFC_SUCCESS;
 }
