@@ -138,12 +138,14 @@ else()
 		  "/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/jre/lib/server/libjvm.dylib"
 		)	
 	endif(WITH_GFC_JVM)
-	target_link_libraries(gfc PRIVATE 
-		crypto
-	)
-	target_link_libraries(gfc_shared PRIVATE 
-		crypto
-	)
+	if(WITH_GFC_CRYPTO)	
+		target_link_libraries(gfc PRIVATE 
+			crypto
+		)
+		target_link_libraries(gfc_shared PRIVATE 
+			crypto
+		)
+	endif(WITH_GFC_CRYPTO)
 endif(WIN32)
 
 add_executable(test_gfc_string
