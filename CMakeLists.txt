@@ -33,8 +33,8 @@ project(gfc VERSION 1.0.0 DESCRIPTION "g foundation class")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_BSD_SOURCE -DGFC_USE_OPENSSL -Wno-format -Wno-deprecated-declarations")
 
-option(WITH_GFC_JVM "gfc_jvm.c" ON)
-option(WITH_GFC_CRYPTO "gfc_crypto.c" ON)
+option(WITH_GFC_JVM "gfc jvm" ON)
+option(WITH_GFC_CRYPTO "gfc crypto" ON)
 
 set(GFC_SOURCES 
 	src/gfc_base64.c
