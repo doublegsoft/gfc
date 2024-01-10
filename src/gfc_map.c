@@ -301,8 +301,8 @@ gfc_map_iterate(gfc_map_p map, int (*resolve)(const char*, user_data)) {
     const char* key = map->data[i].key;
     user_data data = (user_data) (map->data[i].data);
     int status = resolve(key, data);
-    map->data[i].data = NULL;
-    map->data[i].in_use = 0;
+//    map->data[i].data = NULL;
+//    map->data[i].in_use = 0;
     if (status != GFC_ERROR_MAP_OK) {
       return status;
     }
