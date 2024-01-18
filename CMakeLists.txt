@@ -57,6 +57,7 @@ set(GFC_SOURCES
   src/gfc_gc.c
   src/gfc_fs.c
   src/gfc_cli.c
+  src/gfc_id.c
 )
 
 ####################
@@ -285,5 +286,13 @@ add_executable(test_gfc_cli
 )
 
 target_link_libraries(test_gfc_cli PRIVATE
+	gfc
+)	
+
+add_executable(test_gfc_id
+  test/test_gfc_id.c
+)
+
+target_link_libraries(test_gfc_id PRIVATE
 	gfc
 )	
