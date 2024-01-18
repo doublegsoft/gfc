@@ -53,7 +53,7 @@ int main()
 
   char* key = "hello-050";
   char* val;
-  gfc_lru_get(lru, key, strlen(key), &val);
+  gfc_lru_get(lru, key, strlen(key), (void**)&val);
   printf("found %s = %s\n", key, val);
 
   key = "hello-040";
