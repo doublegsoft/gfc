@@ -31,10 +31,14 @@ cmake_minimum_required(VERSION 3.6)
 
 project(gfc VERSION 1.0.0 DESCRIPTION "g foundation class")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_BSD_SOURCE -DGFC_USE_OPENSSL -Wno-format -Wno-deprecated-declarations")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_BSD_SOURCE -Wno-format -Wno-deprecated-declarations")
 
-option(WITH_GFC_JVM "gfc jvm" ON)
-option(WITH_GFC_CRYPTO "gfc crypto" ON)
+set(LIB_LUAJIT		"libluajit")
+set(LUAJIT				"LuaJIT-2.1")
+
+option(WITH_GFC_JVM 			"gfc jvm" ON)
+option(WITH_GFC_LUAJIT 		"gfc lua jit" ON)
+option(WITH_GFC_CRYPTO 		"gfc crypto" ON)
 
 set(GFC_SOURCES 
 	src/gfc_base64.c
@@ -70,9 +74,29 @@ if(WITH_GFC_JVM)
 		list(APPEND GFC_SOURCES src/gfc_jvm.c)
 	endif (APPLE)
 endif(WITH_GFC_JVM)
-if(WITH_GFC_CRYPTO)
+
+if(WITH_GFC_CRYPTO) 
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGFC_USE_OPENSSL")
 	list(APPEND GFC_SOURCES src/gfc_crypto.c)
 endif(WITH_GFC_CRYPTO)
+
+if(WITH_GFC_LUAJIT)
+	list(APPEND GFC_SOURCES src/gfc_lj.c)
+endif(WITH_GFC_LUAJIT)
+
+####################
+##
+## CUSTOM BUILD
+##
+####################
+add_custom_command(OUTPUT ${LIB_LUAJIT}_OUT
+  COMMAND mkdir -p ${CMAKE_BINARY_DIR}/3rd/${LUAJIT}/
+  COMMAND cp -rf ${CMAKE_SOURCE_DIR}/3rd/${LUAJIT}/ ${CMAKE_BINARY_DIR}/3rd/${LUAJIT}
+  COMMAND export MACOSX_DEPLOYMENT_TARGET=10.16 && make -C ${CMAKE_BINARY_DIR}/3rd/${LUAJIT} 
+)
+add_custom_target(${LIB_LUAJIT} ALL
+  DEPENDS ${LIB_LUAJIT}_OUT
+)
 
 ####################
 ##
