@@ -34,11 +34,13 @@ extern "C"
 {
 #endif
 
-#include <lua.h>
-#include <lualib.h>
-#include <lauxlib.h>
-
 #include "gfc_type.h"
+
+int
+gfc_lua_init(void);
+
+int
+gfc_lua_exec(const char* script);
 
 
 #ifdef __cplusplus

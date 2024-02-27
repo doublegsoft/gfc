@@ -27,3 +27,29 @@
 ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "gfc_lua.h"
+
+#include <lua.h>
+#include <lualib.h>
+#include <lauxlib.h>
+
+static lua_State* L;
+
+int
+gfc_lua_init(void)
+{
+  L = luaL_newstate();
+  if (!L)
+    return -1;
+
+  luaL_openlibs(L);
+
+  return 0;
+}
+
+int
+gfc_lua_exec(const char* script)
+{
+  if (luaL_dofile(L, script) == LUA_OK)
+    lua_pop(L, lua_gettop(L));
+  return 0;
+}
