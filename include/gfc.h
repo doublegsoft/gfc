@@ -44,6 +44,7 @@ extern "C"
 #include "gfc_fs.h"
 #include "gfc_cli.h"
 #include "gfc_jvm.h"
+#include "gfc_lua.h"
 #include "gfc_id.h"
 
 #ifdef __cplusplus

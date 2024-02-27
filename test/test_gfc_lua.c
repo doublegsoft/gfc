@@ -11,7 +11,7 @@
 ** Y8b d88P
 **  "Y88P"
 **
-** Copyright (C) 2022 doublegsoft.open
+** Copyright (C) 2023 doublegsoft.open
 **
 ** This program is free software: you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -26,25 +26,15 @@
 ** You should have received a copy of the GNU General Public License
 ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef __GFC_LUA_H__
-#define __GFC_LUA_H__
+#include <assert.h>
+#include <pthread.h>
+#include <unistd.h>
 
-#ifdef __cplusplus
-extern "C"
+#include "gfc.h"
+
+int main(int argc, char* argv[])
 {
-#endif
-
-#include "gfc_type.h"
-
-int
-gfc_lua_init(void);
-
-int
-gfc_lua_exec(const char* script);
-
-
-#ifdef __cplusplus
+  gfc_lua_init();
+  gfc_lua_exec("3rd/lua-5.4.6/testes/main.lua");
+  gfc_lua_exec("3rd/lua-5.4.6/testes/all.lua");
 }
-#endif
-
-#endif // __GFC_LUA_H__

@@ -119,6 +119,7 @@ endif(WITH_GFC_LUA)
 if(UNIX)
   link_directories(
 	  /opt/local/lib
+	  ${CMAKE_BINARY_DIR}/3rd/${LUA}
 	)
 endif(UNIX)
 
@@ -190,6 +191,14 @@ else()
 			crypto
 		)
 	endif(WITH_GFC_CRYPTO)
+	if(WITH_GFC_LUA)	
+		target_link_libraries(gfc PRIVATE 
+			lua
+		)
+		target_link_libraries(gfc_shared PRIVATE 
+			lua
+		)
+	endif(WITH_GFC_LUA)
 endif(WIN32)
 
 add_executable(test_gfc_string
@@ -323,6 +332,16 @@ target_link_libraries(test_gfc_jvm PRIVATE
 )
 	endif (APPLE)
 endif(WITH_GFC_JVM)
+
+if(WITH_GFC_LUA)
+add_executable(test_gfc_lua
+  test/test_gfc_lua.c
+)
+
+target_link_libraries(test_gfc_lua PRIVATE
+	gfc
+)
+endif(WITH_GFC_LUA)
 
 add_executable(test_gfc_cli
   test/test_gfc_cli.c
