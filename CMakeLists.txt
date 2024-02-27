@@ -35,9 +35,11 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_BSD_SOURCE -Wno-format -Wno-deprecated-de
 
 set(LIB_LUAJIT		"libluajit")
 set(LUAJIT				"LuaJIT-2.1")
+set(LIB_LUA				"liblua")
+set(LUA						"lua-5.4.6")
 
 option(WITH_GFC_JVM 			"gfc jvm" ON)
-option(WITH_GFC_LUAJIT 		"gfc lua jit" ON)
+option(WITH_GFC_LUA 			"gfc lua" ON)
 option(WITH_GFC_CRYPTO 		"gfc crypto" ON)
 
 set(GFC_SOURCES 
@@ -80,23 +82,34 @@ if(WITH_GFC_CRYPTO)
 	list(APPEND GFC_SOURCES src/gfc_crypto.c)
 endif(WITH_GFC_CRYPTO)
 
-if(WITH_GFC_LUAJIT)
+if(WITH_GFC_LUA)
 	list(APPEND GFC_SOURCES src/gfc_lj.c)
-endif(WITH_GFC_LUAJIT)
+endif(WITH_GFC_LUA)
 
 ####################
 ##
 ## CUSTOM BUILD
 ##
 ####################
-add_custom_command(OUTPUT ${LIB_LUAJIT}_OUT
-  COMMAND mkdir -p ${CMAKE_BINARY_DIR}/3rd/${LUAJIT}/
-  COMMAND cp -rf ${CMAKE_SOURCE_DIR}/3rd/${LUAJIT}/ ${CMAKE_BINARY_DIR}/3rd/${LUAJIT}
-  COMMAND export MACOSX_DEPLOYMENT_TARGET=10.16 && make -C ${CMAKE_BINARY_DIR}/3rd/${LUAJIT} 
-)
-add_custom_target(${LIB_LUAJIT} ALL
-  DEPENDS ${LIB_LUAJIT}_OUT
-)
+if(WITH_GFC_LUA)
+	add_custom_command(OUTPUT ${LIB_LUAJIT}_OUT
+	  COMMAND mkdir -p ${CMAKE_BINARY_DIR}/3rd/${LUAJIT}/
+	  COMMAND cp -rf ${CMAKE_SOURCE_DIR}/3rd/${LUAJIT}/ ${CMAKE_BINARY_DIR}/3rd/${LUAJIT}
+	  COMMAND export MACOSX_DEPLOYMENT_TARGET=10.16 && make -C ${CMAKE_BINARY_DIR}/3rd/${LUAJIT} 
+	)
+	add_custom_target(${LIB_LUAJIT} ALL
+	  DEPENDS ${LIB_LUAJIT}_OUT
+	)
+	
+	add_custom_command(OUTPUT ${LIB_LUA}_OUT
+	  COMMAND mkdir -p ${CMAKE_BINARY_DIR}/3rd/${LUA}/
+	  COMMAND cp -rf ${CMAKE_SOURCE_DIR}/3rd/${LUA}/ ${CMAKE_BINARY_DIR}/3rd/${LUA}
+	  COMMAND make -C ${CMAKE_BINARY_DIR}/3rd/${LUA} 
+	)
+	add_custom_target(${LIB_LUA} ALL
+	  DEPENDS ${LIB_LUA}_OUT
+	)
+endif(WITH_GFC_LUA)
 
 ####################
 ##
