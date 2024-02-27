@@ -83,7 +83,7 @@ if(WITH_GFC_CRYPTO)
 endif(WITH_GFC_CRYPTO)
 
 if(WITH_GFC_LUA)
-	list(APPEND GFC_SOURCES src/gfc_lj.c)
+	list(APPEND GFC_SOURCES src/gfc_lua.c)
 endif(WITH_GFC_LUA)
 
 ####################
@@ -141,6 +141,12 @@ else ()
 		include_directories(
 			"/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/include"
 			"/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/include/darwin"
+		)
+	endif()
+	if(WITH_GFC_LUA)	
+		include_directories(
+			"3rd/${LUA}"
+			"3rd/${LUAJIT}"
 		)
 	endif()
 endif(WIN32)
