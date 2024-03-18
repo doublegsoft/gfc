@@ -53,7 +53,11 @@ gfc_map_new() {
 
   // NOTE: INIT VERY IMPORTANT
   for (int i = 0; i < INITIAL_SIZE; i++)
+  {
+    m->data[i].key[0] = '\0';
+    m->data[i].in_use = 0;
     m->data[i].data = NULL;
+  }
 
   m->table_size = INITIAL_SIZE;
   m->size = 0;
@@ -198,7 +202,7 @@ int gfc_map_rehash(gfc_map_p map){
   gfc_map_element_p curr;
 
   gfc_map_element_p temp = (gfc_map_element_p)
-        gfc_gc_malloc(sizeof(gfc_map_element_t), 2 * map->table_size);
+      gfc_gc_malloc(sizeof(gfc_map_element_t), 2 * map->table_size);
   if(!temp) return GFC_ERROR_MAP_OUT_OF_MEMORY;
 
   /* Update the array */
@@ -209,6 +213,16 @@ int gfc_map_rehash(gfc_map_p map){
   old_size = map->table_size;
   map->table_size = 2 * map->table_size;
   map->size = 0;
+
+  /*!
+  ** 初始化新分配的内存。
+  */
+  for (i = old_size; i < map->table_size; i++)
+  {
+    map->data[i].key[0] = '\0';
+    map->data[i].in_use = 0;
+    map->data[i].data = NULL;
+  }
 
   /* Rehash the elements */
   for(i = 0; i < old_size; i++){
@@ -299,10 +313,13 @@ gfc_map_iterate(gfc_map_p map, int (*resolve)(const char*, user_data)) {
   for(i = 0; i < map->table_size; i++)
   {
     const char* key = map->data[i].key;
+    /*!
+    ** 注意table_size是宽松增加，存在冗余量。
+    ** 所以有的key值应该是没有分配的。
+    */
+    if (key[0] ==  '\0') continue;
     user_data data = (user_data) (map->data[i].data);
     int status = resolve(key, data);
-//    map->data[i].data = NULL;
-//    map->data[i].in_use = 0;
     if (status != GFC_ERROR_MAP_OK) {
       return status;
     }
