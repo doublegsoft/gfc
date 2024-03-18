@@ -27,6 +27,7 @@
 ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
@@ -61,12 +62,22 @@ main()
   assert(GFC_ERROR_MAP_OK == rc);
   printf("hello = %s\n", (char*) found);
 
-  rc= gfc_map_get(map1, "world", &found);
+  rc = gfc_map_get(map1, "world", &found);
   assert(GFC_ERROR_MAP_OK == rc);
   printf("world = %s\n", (char*) found);
 
   gfc_map_deep_free(map1);
   gfc_map_deep_free(map2);
 
+  map1 = gfc_map_new();
+
+  for (int i = 0; i < 1000000; i++)
+  {
+    char idx[1024];
+    sprintf(idx, "%08d", i);
+    gfc_map_put(map1, idx, strdup(idx));
+  }
+
+  printf("size = %d\n", gfc_map_size(map1));
   return 0;
 }
