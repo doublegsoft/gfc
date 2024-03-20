@@ -119,7 +119,6 @@ endif(WITH_GFC_LUA)
 if(UNIX)
   link_directories(
 	  /opt/local/lib
-	  ${CMAKE_BINARY_DIR}/3rd/${LUA}
 	)
 endif(UNIX)
 
@@ -192,6 +191,9 @@ else()
 		)
 	endif(WITH_GFC_CRYPTO)
 	if(WITH_GFC_LUA)	
+		link_directories(
+			${CMAKE_BINARY_DIR}/3rd/${LUA}
+		)
 		target_link_libraries(gfc PRIVATE 
 			lua
 		)
