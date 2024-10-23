@@ -38,6 +38,10 @@ int
 main()
 {
   gfc_gc_init();
+
+  /*!
+  ** basic test
+  */
   gfc_map_p map1 = gfc_map_new();
   gfc_map_p map2 = gfc_map_new();
 
@@ -48,7 +52,6 @@ main()
 
   gfc_map_put(map1, "hello", strdup(str1->buffer));
   gfc_map_put(map1, "world", strdup(str2->buffer));
-
   printf("map1 size: %d\n", gfc_map_size(map1));
 
   gfc_map_put(map2, "hello", strdup(str3->buffer));
@@ -69,6 +72,9 @@ main()
   gfc_map_deep_free(map1);
   gfc_map_deep_free(map2);
 
+  /*!
+  ** performance test
+  */
   map1 = gfc_map_new();
 
   for (int i = 0; i < 1000000; i++)
@@ -79,5 +85,23 @@ main()
   }
 
   printf("size = %d\n", gfc_map_size(map1));
+
+  /*!
+  ** complex object test
+  */
+  gfc_map_p inner1 = gfc_map_new();
+  gfc_map_put(map1, "inner1", inner1);
+
+  for (int i = 0; i < 100; i++)
+  {
+    char idx[1024];
+    sprintf(idx, "%08d", i);
+    gfc_map_put(inner1, idx, strdup(idx));
+  }
+
+  gfc_map_p inner2 = gfc_map_new();
+  gfc_map_put(map1, "inner2", inner2);
+
+  gfc_map_deep_free(map1);
   return 0;
 }
