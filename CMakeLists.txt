@@ -33,13 +33,6 @@ project(gfc VERSION 1.0.0 DESCRIPTION "g foundation class")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_BSD_SOURCE -Wno-format -Wno-deprecated-declarations")
 
-set(LIB_LUAJIT		"libluajit")
-set(LUAJIT				"LuaJIT-2.1")
-set(LIB_LUA				"liblua")
-set(LUA						"lua-5.4.6")
-
-option(WITH_GFC_JVM 			"gfc jvm" ON)
-option(WITH_GFC_LUA 			"gfc lua" ON)
 option(WITH_GFC_CRYPTO 		"gfc crypto" ON)
 
 set(GFC_SOURCES 
@@ -71,45 +64,10 @@ set(GFC_SOURCES
 ## WITH OPTIONS
 ##
 ####################
-if(WITH_GFC_JVM)
-	if (APPLE)
-		list(APPEND GFC_SOURCES src/gfc_jvm.c)
-	endif (APPLE)
-endif(WITH_GFC_JVM)
-
 if(WITH_GFC_CRYPTO) 
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DGFC_USE_OPENSSL")
 	list(APPEND GFC_SOURCES src/gfc_crypto.c)
 endif(WITH_GFC_CRYPTO)
-
-if(WITH_GFC_LUA)
-	list(APPEND GFC_SOURCES src/gfc_lua.c)
-endif(WITH_GFC_LUA)
-
-####################
-##
-## CUSTOM BUILD
-##
-####################
-if(WITH_GFC_LUA)
-	add_custom_command(OUTPUT ${LIB_LUAJIT}_OUT
-	  COMMAND mkdir -p ${CMAKE_BINARY_DIR}/3rd/${LUAJIT}/
-	  COMMAND cp -rf ${CMAKE_SOURCE_DIR}/3rd/${LUAJIT}/ ${CMAKE_BINARY_DIR}/3rd/${LUAJIT}
-	  COMMAND export MACOSX_DEPLOYMENT_TARGET=10.16 && make -C ${CMAKE_BINARY_DIR}/3rd/${LUAJIT} 
-	)
-	add_custom_target(${LIB_LUAJIT} ALL
-	  DEPENDS ${LIB_LUAJIT}_OUT
-	)
-	
-	add_custom_command(OUTPUT ${LIB_LUA}_OUT
-	  COMMAND mkdir -p ${CMAKE_BINARY_DIR}/3rd/${LUA}/
-	  COMMAND cp -rf ${CMAKE_SOURCE_DIR}/3rd/${LUA}/ ${CMAKE_BINARY_DIR}/3rd/${LUA}
-	  COMMAND make -C ${CMAKE_BINARY_DIR}/3rd/${LUA} 
-	)
-	add_custom_target(${LIB_LUA} ALL
-	  DEPENDS ${LIB_LUA}_OUT
-	)
-endif(WITH_GFC_LUA)
 
 ####################
 ##
@@ -137,18 +95,6 @@ else ()
 		"/opt/local/include"
 		"include"
 	)
-	if(WITH_GFC_JVM)	
-		include_directories(
-			"/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/include"
-			"/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/include/darwin"
-		)
-	endif()
-	if(WITH_GFC_LUA)	
-		include_directories(
-			"3rd/${LUA}"
-			"3rd/${LUAJIT}"
-		)
-	endif()
 endif(WIN32)
 
 add_library(gfc STATIC ${GFC_SOURCES})
@@ -172,16 +118,6 @@ if (WIN32)
 	  Rpcrt4
 	)
 else()
-	if(WITH_GFC_JVM)	
-		target_link_libraries(gfc PRIVATE
-		  "/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/jre/lib/jli/libjli.dylib"
-		  "/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/jre/lib/server/libjvm.dylib"
-		)	
-		target_link_libraries(gfc_shared PRIVATE
-		  "/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/jre/lib/jli/libjli.dylib"
-		  "/Library/Java/JavaVirtualMachines/jdk1.8.0_212.jdk/Contents/Home/jre/lib/server/libjvm.dylib"
-		)	
-	endif(WITH_GFC_JVM)
 	if(WITH_GFC_CRYPTO)	
 		target_link_libraries(gfc PRIVATE 
 			crypto
@@ -190,17 +126,6 @@ else()
 			crypto
 		)
 	endif(WITH_GFC_CRYPTO)
-	if(WITH_GFC_LUA)	
-		link_directories(
-			${CMAKE_BINARY_DIR}/3rd/${LUA}
-		)
-		target_link_libraries(gfc PRIVATE 
-			lua
-		)
-		target_link_libraries(gfc_shared PRIVATE 
-			lua
-		)
-	endif(WITH_GFC_LUA)
 endif(WIN32)
 
 add_executable(test_gfc_string
@@ -312,38 +237,18 @@ add_executable(test_gfc_crypto
   test/test_gfc_crypto.c
 )
 
-if (WIN32)
+  if (WIN32)
 	target_link_libraries(test_gfc_crypto PRIVATE
 	  libcrypto.dll.a
 	)
-else (UNIX)
+  else (UNIX)
 	
 	target_link_libraries(test_gfc_crypto PRIVATE
 	  crypto
 	)
-endif (WIN32)
+  endif (WIN32)
+
 endif(WITH_GFC_CRYPTO)
-
-if(WITH_GFC_JVM)	
-	if(APPLE)
-add_executable(test_gfc_jvm
-  test/test_gfc_jvm.c
-)
-target_link_libraries(test_gfc_jvm PRIVATE
-	gfc
-)
-	endif (APPLE)
-endif(WITH_GFC_JVM)
-
-if(WITH_GFC_LUA)
-add_executable(test_gfc_lua
-  test/test_gfc_lua.c
-)
-
-target_link_libraries(test_gfc_lua PRIVATE
-	gfc
-)
-endif(WITH_GFC_LUA)
 
 add_executable(test_gfc_cli
   test/test_gfc_cli.c
